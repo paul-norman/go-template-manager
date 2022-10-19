@@ -1,16 +1,16 @@
 # Functions in `templateManager`
 
-All functions in `templateManager` accept their principle argument last to allow simple chaining. *Efforts have been made to output clear errors and return suitable empty values rather than cause panics (like several `text/template` functions)*.
+All functions in `templateManager` accept their principle argument last to allow simple chaining. *Efforts have been made to output clear errors and return suitable empty values rather than cause panics (a problem in several `text/template` functions)*.
 
-Contents: [add](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divisibleby`](#divisibleby), [`dl`](#dl), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`last`](#last), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`replace`](#replace), [`rtrim`](#rtrim), [`split`](#split), [`striptags`](#striptags), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
+Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divisibleby`](#divisibleby), [`dl`](#dl), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`last`](#last), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`replace`](#replace), [`rtrim`](#rtrim), [`split`](#split), [`striptags`](#striptags), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
 
 ## `add`
 
 ```go
-func add[T any](value T, to T) T
+func add[T any](add T, to T) T
 ```
 
-Adds a value to the existing item. For numeric items this is a simple addition. For more complex types this is appended / merged as appropriate. This is similar to Django's add function.
+Adds a value to the existing item. If the added value is a simple numeric type this will be treated as a simple addition *(recursively on all possible items)*. If the added value is a string, it will be appended to string values *(recursively on all possible items)*. If the added value is a more complex type (e.g. slice / map), then it is appended / merged as appropriate in a similar manner to Django's add function.
 
 Returns new variable of the original `to` data type.
 
@@ -107,24 +107,24 @@ It can accept various parameter combinations:
 Date and time functions support various pre-defined formats for simplicity: 
 
 ```go
-`ISO8601Z`: "X-m-d\\TH:i:sP",	// "2006-01-02T15:04:05Z07:00"
-`ISO8601`: 	"Y-m-d\\TH:i:sO",	// "2006-01-02T15:04:05-07:00"
-`RFC822Z`: 	"D, d M y H:i:s O", // "Mon, 02 Jan 06 15:04 -07:00"
-`RFC822`: 	"D, d M y H:i:s T", // "Mon, 02 Jan 06 15:04 MST"
-`RFC850`: 	"l, d-M-y H:i:s T", // "Monday, 02-Jan-06 15:04:05 MST"
-`RFC1036`: 	"D, d M y H:i:s O",	// "02 Jan 06 15:04 -07:00"
+`ISO8601Z`: "X-m-d\\TH:i:sP",   // "2006-01-02T15:04:05Z07:00"
+`ISO8601`:  "Y-m-d\\TH:i:sO",   // "2006-01-02T15:04:05-07:00"
+`RFC822Z`:  "D, d M y H:i:s O", // "Mon, 02 Jan 06 15:04 -07:00"
+`RFC822`:   "D, d M y H:i:s T", // "Mon, 02 Jan 06 15:04 MST"
+`RFC850`:   "l, d-M-y H:i:s T", // "Monday, 02-Jan-06 15:04:05 MST"
+`RFC1036`:  "D, d M y H:i:s O", // "02 Jan 06 15:04 -07:00"
 `RFC1123Z`: "D, d M Y H:i:s O", // "Mon, 02 Jan 2006 15:04:05 -07:00"
-`RFC1123`: 	"D, d M Y H:i:s T", // "Mon, 02 Jan 2006 15:04:05 MST"
-`RFC2822`: 	"D, d M Y H:i:s O",	// "Mon, 02 Jan 2006 15:04:05 -07:00"
-`RFC3339`: 	"Y-m-d\\TH:i:sP", 	// "2006-01-02T15:04:05Z07:00"
-`W3C`: 		"Y-m-d\\TH:i:sP",	// "2006-01-02T15:04:05Z07:00"
-`ATOM`: 	"Y-m-d\\TH:i:sP",	// "2006-01-02T15:04:05Z07:00"
-`COOKIE`: 	"l, d-M-Y H:i:s T",	// "Monday, 02-Jan-2006 15:04:05 MST"
-`RSS`: 		"D, d M Y H:i:s O",	// "Mon, 02 01 2006 15:04:05 -07:00"
-`MYSQL`: 	"Y-m-d H:i:s",		// "2006-01-02 15:04:05"
-`UNIX`: 	"D M _j H:i:s T Y", // "Mon Jan _2 15:04:05 MST 2006"
-`RUBY`: 	"D M d H:i:s o Y", 	// "Mon Jan 02 15:04:05 -0700 2006"
-`ANSIC`:    "D M _j H:i:s Y", 	// "Mon Jan _2 15:04:05 2006"
+`RFC1123`:  "D, d M Y H:i:s T", // "Mon, 02 Jan 2006 15:04:05 MST"
+`RFC2822`:  "D, d M Y H:i:s O", // "Mon, 02 Jan 2006 15:04:05 -07:00"
+`RFC3339`:  "Y-m-d\\TH:i:sP",   // "2006-01-02T15:04:05Z07:00"
+`W3C`:      "Y-m-d\\TH:i:sP",   // "2006-01-02T15:04:05Z07:00"
+`ATOM`:     "Y-m-d\\TH:i:sP",   // "2006-01-02T15:04:05Z07:00"
+`COOKIE`:   "l, d-M-Y H:i:s T", // "Monday, 02-Jan-2006 15:04:05 MST"
+`RSS`:      "D, d M Y H:i:s O", // "Mon, 02 01 2006 15:04:05 -07:00"
+`MYSQL`:    "Y-m-d H:i:s",      // "2006-01-02 15:04:05"
+`UNIX`:     "D M _j H:i:s T Y", // "Mon Jan _2 15:04:05 MST 2006"
+`RUBY`:     "D M d H:i:s o Y",  // "Mon Jan 02 15:04:05 -0700 2006"
+`ANSIC`:    "D M _j H:i:s Y",   // "Mon Jan _2 15:04:05 2006"
 ```
 
 ## `datetime`
@@ -209,7 +209,7 @@ func dl(value any) string
 
 Converts slices, arrays or maps into an HTML definition list. For maps this will use the keys as the dt elements.
 
-Other data types will just return a string represent of themselves.
+Other data types will just return a string representation of themselves.
 
 ## `first`
 
@@ -238,6 +238,8 @@ Formats a time.Time object for display.
 ```django
 {{ now | formattime "d/m/y H:i:s" }}
 ```
+
+Date and time functions support various pre-defined formats for simplicity, see [`date`](#date).
 
 ## `htmldecode`
 
@@ -291,7 +293,7 @@ Encodes any value to a JSON string.
 func key(input ...any) any
 ```
 
-Very similar to the `text/template` [`slice`](BASICS.md#general-utility-functions) function, `key` accepts any number of nested keys and returns the result of indexing its **final argument** by them. For strings this returns a byte value. The indexed item must be a string, map, slice, or array.
+Very similar to the `text/template` [`slice`](BASICS.md#general-utility-functions) function, `key` accepts any number of nested keys and returns the result of indexing its **final argument** by them. For strings this returns individual letters. The indexed item must be a string, map, slice, or array.
 
 ## `last`
 
@@ -307,11 +309,13 @@ Gets the last value from slices / arrays or the last word from strings. **All ot
 func localtime(location string|time.Location, t time.Time) time.Time
 ```
 
-Localises a time object to display local times / dates.
+Localises a time object to display local times / dates. Localisation strings are system dependant.
 
 ```django
 {{ now | localtime "PST" | formattime "d/m/y H:i:s" }}
 ```
+
+Date and time functions support various pre-defined formats for simplicity, see [`date`](#date).
 
 ## `lower`
 
@@ -329,7 +333,7 @@ Returns new variable of the original `value` data type.
 func ltrim[T any](remove string, value T) T
 ```
 
-Removes the passed characters from the right end of string values. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
+Removes the passed characters from the left end of string values. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
 Returns new variable of the original `value` data type.
 
@@ -376,7 +380,7 @@ Multiplies the `value` by the `multiplier`. If `value` is a slice, array or map 
 func nl2br[T any](value T) T
 ```
 
-Replaces all instances of `\n` (new line) with instances of `<br>` within `value`. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
+Replaces all instances of `\n` (new line) with instances of `<br>` within `value`. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain. [`paragraph`](#paragraph) will perform a similar task in a more intelligent manner.
 
 Returns new variable of the original `value` data type.
 
@@ -396,7 +400,7 @@ func ol(value any) string
 
 Converts slices, arrays or maps into an HTML ordered list.
 
-Other data types will just return a string represent of themselves.
+Other data types will just return a string representation of themselves.
 
 ## `ordinal`
 
@@ -427,26 +431,26 @@ Allows pluralisation of word endings. Allows basic customisation of the possible
 It can accept various parameter combinations:
 
 ```django
-cat{{ pluralise 1 }}
-<!-- cat -->
+1 cat{{ pluralise 1 }}
+<!-- 1 cat -->
 
-cat{{ pluralise 2 }}
-<!-- cats -->
+2 cat{{ pluralise 2 }}
+<!-- 2 cats -->
 
-cat{{ pluralise 0 }}
-<!-- cats -->
+0 cat{{ pluralise 0 }}
+<!-- 0 cats -->
 
-mattress{{ pluralise "es" 1 }}
-<!-- mattress -->
+1 mattress{{ pluralise "es" 1 }}
+<!-- 1 mattress -->
 
-mattress{{ pluralise "es" 2 }}
-<!-- mattresses -->
+2 mattress{{ pluralise "es" 2 }}
+<!-- 2 mattresses -->
 
-cherr{{ pluralise "y" "ies" 1 }}
-<!-- cherry -->
+1 cherr{{ pluralise "y" "ies" 1 }}
+<!-- 1 cherry -->
 
-cherr{{ pluralise "y" "ies" 2 }}
-<!-- cherries -->
+2 cherr{{ pluralise "y" "ies" 2 }}
+<!-- 2 cherries -->
 ```
 
 ## `prefix`
@@ -543,18 +547,18 @@ Returns new variable of the original `value` data type.
 ## `subtract`
 
 ```go
-func subtract[T any](value T, to T) T
+func subtract[T any](subtract T, from T) T
 ```
 
-Removes a value from the existing item. For numeric items this is a simple subtraction. For other types this is removed as appropriate. This function pairs with the [`add`](#add) function.
+Subtracts a value from the existing item. If the subtracted value is a simple numeric type this will be treated as a simple maths *(recursively on all possible items)*. If the removed value is a string, it will be [`cut`](#cut) from string values *(recursively on all possible items)*. If the removed value is a more complex type (e.g. slice / map), then it is removed on a per key bases as appropriate in a similar manner to Django's subtract function.
 
 ## `suffix`
 
 ```go
-func suffix[T any](prefix string, value T) T
+func suffix[T any](suffix string, value T) T
 ```
 
-Suffixes all strings within `value` with `prefix`. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
+Suffixes all strings within `value` with `suffix`. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
 Returns new variable of the original `value` data type.
 
@@ -672,7 +676,7 @@ func ul(value any) string
 
 Converts slices, arrays or maps into an HTML unordered list.
 
-Other data types will just return a string represent of themselves.
+Other data types will just return a string representation of themselves.
 
 ## `upper`
 
