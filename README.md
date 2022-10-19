@@ -2,7 +2,7 @@
 
 Package `templateManager` simplifies the use of Go's standard library `text/template` for use with HTML templates.
 
-It automates the process of choosing which files to group together for parsing (creating bundles), and builds a store of each entry template file complete with all of its dependencies.
+It automates the process of choosing which files to group together for parsing (creating bundles), and builds a store of each entry template file complete with all of its dependencies. It also allows simple variables to be globally defined in the templates themselves.
 
 ## Contents
 
@@ -22,18 +22,18 @@ It automates the process of choosing which files to group together for parsing (
 Install / update `templateManager` using go get:
 
 ```
-go get -u github.com/paul-norman/templateManager
+go get -u github.com/paul-norman/go-template-manager
 ```
 
 or import it as:
 
 ```go
-import "github.com/paul-norman/templateManager"
+import "github.com/paul-norman/go-template-manager"
 ```
 
 ## Main Features
 
-`templateManager` generally just simplifies the usage of the `text/templates` package. A basic usage guide to Go Templates is provided [here](BASICS.md).
+`templateManager` generally just simplifies the usage of the `text/templates` package. A basic usage guide to these [Go Templates](https://pkg.go.dev/text/template) is provided [here](BASICS.md).
 
 ### Extends keyword
 
@@ -305,13 +305,13 @@ It is not currently possible to return errors from functions, so any errors are 
 
 If a function receives invalid input, it will stop execution of the entire template at the point that the error occurs, so it's important to write flexible functions, or be careful as to where they are called.
 
-It might be safer to rewrite the above test function (`add()`) using the `reflect` package (used throughout `text/templates`) to allow for type checking and sensible return values for unsupported types (e.g. do nothing, or return 0).
+It might be safer to rewrite the above test function (`add()`) using the `reflect` package (used throughout `text/templates`) to allow for type checking and sensible return values for unsupported types *(e.g. do nothing, or return 0)*.
 
 ## Built-in Functions
 
 A selection of useful functions have been created to use in the templates to compliment those already built in to `text/template`. They are documented in their own [guide](FUNCTIONS.md), quick links:
 
-[add](FUNCTIONS.md#add), [`capfirst`](FUNCTIONS.md#capfirst), [`collection`](FUNCTIONS.md#collection), [`contains`](FUNCTIONS.md#contains), [`cut`](FUNCTIONS.md#cut), [`date`](FUNCTIONS.md#date), [`datetime`](FUNCTIONS.md#datetime), [`default`](FUNCTIONS.md#default), [`divide`](FUNCTIONS.md#divide), [`divisibleby`](FUNCTIONS.md#divisibleby), [`dl`](FUNCTIONS.md#dl), [`first`](FUNCTIONS.md#first), [`firstof`](FUNCTIONS.md#firstof), [`formattime`](FUNCTIONS.md#formattime), [`htmldecode`](FUNCTIONS.md#htmldecode), [`htmlencode`](FUNCTIONS.md#htmlencode), [`join`](FUNCTIONS.md#join), [`jsondecode`](FUNCTIONS.md#jsondecode), [`jsonencode`](FUNCTIONS.md#jsonencode), [`key`](FUNCTIONS.md#key), [`last`](FUNCTIONS.md#last), [`localtime`](FUNCTIONS.md#localtime), [`lower`](FUNCTIONS.md#lower), [`ltrim`](FUNCTIONS.md#ltrim), [`mktime`](FUNCTIONS.md#mktime), [`multiply`](FUNCTIONS.md#multiply), [`nl2br`](FUNCTIONS.md#nl2br), [`now`](FUNCTIONS.md#now), [`ol`](FUNCTIONS.md#ol), [`ordinal`](FUNCTIONS.md#ordinal), [`paragraph`](FUNCTIONS.md#paragraph), [`pluralise`](FUNCTIONS.md#pluralise), [`prefix`](FUNCTIONS.md#prefix), [`random`](FUNCTIONS.md#random), [`regexp`](FUNCTIONS.md#regexp), [`regexpreplace`](FUNCTIONS.md#regexpreplace), [`replace`](FUNCTIONS.md#replace), [`rtrim`](FUNCTIONS.md#rtrim), [`split`](FUNCTIONS.md#split), [`striptags`](FUNCTIONS.md#striptags), [`subtract`](FUNCTIONS.md#subtract), [`suffix`](FUNCTIONS.md#suffix), [`time`](FUNCTIONS.md#time), [`timesince`](FUNCTIONS.md#timesince), [`timeuntil`](FUNCTIONS.md#timeuntil), [`title`](FUNCTIONS.md#title), [`trim`](FUNCTIONS.md#trim), [`truncate`](FUNCTIONS.md#truncate), [`truncatewords`](FUNCTIONS.md#truncatewords), [`ul`](FUNCTIONS.md#ul), [`upper`](FUNCTIONS.md#upper), [`urldecode`](FUNCTIONS.md#urldecode), [`urlencode`](FUNCTIONS.md#urlencode), [`wordcount`](FUNCTIONS.md#wordcount), [`wrap`](FUNCTIONS.md#wrap), [`year`](FUNCTIONS.md#year), [`yesno`](FUNCTIONS.md#yesno)
+[`add`](FUNCTIONS.md#add), [`capfirst`](FUNCTIONS.md#capfirst), [`collection`](FUNCTIONS.md#collection), [`contains`](FUNCTIONS.md#contains), [`cut`](FUNCTIONS.md#cut), [`date`](FUNCTIONS.md#date), [`datetime`](FUNCTIONS.md#datetime), [`default`](FUNCTIONS.md#default), [`divide`](FUNCTIONS.md#divide), [`divisibleby`](FUNCTIONS.md#divisibleby), [`dl`](FUNCTIONS.md#dl), [`first`](FUNCTIONS.md#first), [`firstof`](FUNCTIONS.md#firstof), [`formattime`](FUNCTIONS.md#formattime), [`htmldecode`](FUNCTIONS.md#htmldecode), [`htmlencode`](FUNCTIONS.md#htmlencode), [`join`](FUNCTIONS.md#join), [`jsondecode`](FUNCTIONS.md#jsondecode), [`jsonencode`](FUNCTIONS.md#jsonencode), [`key`](FUNCTIONS.md#key), [`last`](FUNCTIONS.md#last), [`localtime`](FUNCTIONS.md#localtime), [`lower`](FUNCTIONS.md#lower), [`ltrim`](FUNCTIONS.md#ltrim), [`mktime`](FUNCTIONS.md#mktime), [`multiply`](FUNCTIONS.md#multiply), [`nl2br`](FUNCTIONS.md#nl2br), [`now`](FUNCTIONS.md#now), [`ol`](FUNCTIONS.md#ol), [`ordinal`](FUNCTIONS.md#ordinal), [`paragraph`](FUNCTIONS.md#paragraph), [`pluralise`](FUNCTIONS.md#pluralise), [`prefix`](FUNCTIONS.md#prefix), [`random`](FUNCTIONS.md#random), [`regexp`](FUNCTIONS.md#regexp), [`regexpreplace`](FUNCTIONS.md#regexpreplace), [`replace`](FUNCTIONS.md#replace), [`rtrim`](FUNCTIONS.md#rtrim), [`split`](FUNCTIONS.md#split), [`striptags`](FUNCTIONS.md#striptags), [`subtract`](FUNCTIONS.md#subtract), [`suffix`](FUNCTIONS.md#suffix), [`time`](FUNCTIONS.md#time), [`timesince`](FUNCTIONS.md#timesince), [`timeuntil`](FUNCTIONS.md#timeuntil), [`title`](FUNCTIONS.md#title), [`trim`](FUNCTIONS.md#trim), [`truncate`](FUNCTIONS.md#truncate), [`truncatewords`](FUNCTIONS.md#truncatewords), [`ul`](FUNCTIONS.md#ul), [`upper`](FUNCTIONS.md#upper), [`urldecode`](FUNCTIONS.md#urldecode), [`urlencode`](FUNCTIONS.md#urlencode), [`wordcount`](FUNCTIONS.md#wordcount), [`wrap`](FUNCTIONS.md#wrap), [`year`](FUNCTIONS.md#year), [`yesno`](FUNCTIONS.md#yesno)
 
 They are all added by default, but can be removed if necessary *(before adding any functions of your own)*:
 
@@ -337,7 +337,7 @@ import (
 	"fmt"
 	"net/http"
 
-	TM "github.com/paul-norman/templateManager"
+	TM "github.com/paul-norman/go-template-manager"
 )
 
 var tm *TM.TemplateManager
@@ -421,9 +421,9 @@ func test(w http.ResponseWriter, r *http.Request) {
 <meta name="language" content="{{ .LanguageCode }}">
 ```
 
-Running the server and visiting `http://127.0.0.1:8080` in a browser would load the `home.html` template with a title displaying: "Home Title", a description displaying: "default description" (fallback), and the `LanguageCode` displaying as "en-GB" throughout.
+Running the server and visiting `http://127.0.0.1:8080` in a browser would load the `home.html` template with a title displaying: "Home Title", a description displaying: "default description" *(fallback)*, and the `LanguageCode` displaying as "en-GB" throughout.
 
-Visiting `http://127.0.0.1:8080/test` would load the `test.html` template with a title displaying: "default title" (fallback), a description displaying: "default description" (fallback), and the `LanguageCode` set as "en-US" throughout.
+Visiting `http://127.0.0.1:8080/test` would load the `test.html` template with a title displaying: "default title" *(fallback)*, a description displaying: "Test description", and the `LanguageCode` set as "en-US" throughout.
 
 The `LanguageCode` defined in `meta.html` is never needed, but would be used throughout if neither the layout (`public.html`) nor the entry (e.g. `home.html`) templates defined it. This allows flexible fallback variables to be set in the templates themselves.
 
@@ -440,7 +440,7 @@ import (
 	"log"
 	
 	"github.com/gofiber/fiber/v2"
-	TM "github.com/paul-norman/templateManager/integrations/fiber"
+	TM "github.com/paul-norman/go-template-manager/integrations/fiber"
 )
 
 func main() {
