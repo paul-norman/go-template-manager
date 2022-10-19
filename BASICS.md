@@ -35,7 +35,7 @@ There are only 10 keywords in the package:
 block, break, define, else, end, if, range, nil, template, with
 ```
 
-and the special `.` (dot) operator which allows access to variables in ay given "context" *(more on that later)*.
+and the special `.` (dot) operator which allows access to variables in any given "context" *(more on that later)*.
 
 To use any of these keywords, special delimiters are wrapped around them:
 
@@ -123,13 +123,13 @@ These are limited to the current file context unless specifically passed in to a
 
 ### Global Variables
 
-Global variables are passed in to the template when it is "Executed" (rendered). At the root level of the template the `.` (dot) character represents **ALL** of these variables. So if a string is passed in as the only parameter, `{{.}}` will represent a string. If a map of strings (or a struct) is passed in, then `{{.}}` will represent the whole object and their keys will be available after the dot, for example: `{{ .Key1 }}`.
+Global variables are passed in to the template when it is "Executed" (rendered). At the root level of the template the `.` (dot) character represents **ALL** of these variables. So if a string is passed in as the only parameter, then `{{.}}` will represent a string. If a map of strings (or a struct) is passed in, then `{{.}}` will represent the whole object and their keys will be available after the dot, for example: `{{ .Key1 }}`.
 
 *(N.B. Inside loops, or in nested templates, the dot can be remapped to the root of that "context". e.g. the value of the looped variable will be reassigned to `{{.}}`)*
 
 ### `if` / `else`
 
-In Go, if statements require a strict boolean evaluation to work. However within these templates, the condition is whether the value is empty or populated (i.e. not the default for a give variable type). For example:
+In Go, `if` statements require a strict boolean evaluation to work. However within these templates, the condition is whether the value is empty or populated *(i.e. not the default for a give variable type)*. For example:
 
 ```django
 {{ if .String }}
@@ -194,13 +194,13 @@ If `.` (dot) has been reassigned, the global variables can always be accessed us
 
 ```django
 {{ with .Variable }}
-	Dot is now the value of ".Variable" {{.}} and so is {{ $.Variable }}
+	Dot is now the value of ".Variable", i.e. {{.}} = {{ $.Variable }}
 {{ end }}
 ```
 
 ### `range`
 
-If the `range` keyword is passed an array, slice, map, or channel it will iterate over it, redefining the `.` (dot) to its current value. It may also use an `else` block that is executed if the value is empty:
+If the `range` keyword is passed an array, slice, map, or channel it will iterate over it, redefining the `.` (dot) to its current value. `range` may also have an `else` block that is executed if the value is empty:
 
 ```django
 <ul>
@@ -240,7 +240,7 @@ The `template` block is an instruction to execute the named template and return 
 {{ template "template_name" }}
 ```
 
-This renders the "template_name" template without any variables passed to it (and it must not require any). If the template requires some / all of the original input data it's possible to pass it through to the nested template.
+This renders the "template_name" template without any variables passed to it **(and it must not require any)**. If the template requires some / all of the original input data it's possible to pass it through to the nested template.
 
 This renders the "template_name" template with ALL of the current context's data passed to it:
 
