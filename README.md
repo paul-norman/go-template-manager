@@ -429,4 +429,10 @@ The `LanguageCode` defined in `meta.html` is never needed, but would be used thr
 
 ## Integrations
 
-Currently `templateManager` has an integration for [Fiber](https://gofiber.io/) in its [own repository](https://github.com/paul-norman/go-template-manager-fiber) with a basic example.
+Currently `templateManager` has an integrations for:
+
+- [Fiber](https://gofiber.io/) in its [own repository](https://github.com/paul-norman/go-template-manager-fiber) with a basic example.
+- [Echo](https://echo.labstack.com/) in its [own repository](https://github.com/paul-norman/go-template-manager-echo) with a basic example.
+- [Gin](https://gin-gonic.com/) in its [own repository](https://github.com/paul-norman/go-template-manager-gin) with a basic example.
+
+[Martini](https://github.com/go-martini/martini) doesn't require an integration as it can be implemented as in the trivial example [above](#simple-example)
