@@ -429,39 +429,4 @@ The `LanguageCode` defined in `meta.html` is never needed, but would be used thr
 
 ## Integrations
 
-Currently `templateManager` has an integration for [Fiber](https://gofiber.io/) in the `integrations` directory. A basic example:
-
-### Fiber
-
-```go
-package main
-
-import (
-	"log"
-	
-	"github.com/gofiber/fiber/v2"
-	TM "github.com/paul-norman/go-template-manager/integrations/fiber"
-)
-
-func main() {
-	engine := TM.New("./views", ".html")
-
-	app := fiber.New(fiber.Config{
-		Views: engine,
-	})
-
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.Render("home.html", fiber.Map{
-			"Title": "Hello, World!",
-		})
-	})
-
-	app.Get("/test", func(c *fiber.Ctx) error {
-		return c.Render("test.html", fiber.Map{
-			"Title": "Hello, World!",
-		})
-	})
-
-	log.Fatal(app.Listen(":3000"))
-}
-```
+Currently `templateManager` has an integration for [Fiber](https://gofiber.io/) in its [own repository](https://github.com/paul-norman/go-template-manager-fiber) with a basic example.

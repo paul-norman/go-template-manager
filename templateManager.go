@@ -39,15 +39,6 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-/* TODO
-Embed filesystem
-Investigate BUG: en-US (from public template) being parsed twice for test.html
-Comment the code
-Clean up function order
-Test Fiber compat
-Coloured logging option
-*/
-
 type TemplateManager struct {
 	templates 			map[string]*template.Template
 	params				map[string]map[string]any
@@ -144,59 +135,23 @@ func AutomaticInit() (*TemplateManager, error) {
 	return Init(templateDirectory, templateExtension), nil
 }
 
-// Sets the delimiters used by `text/template` (Default: "{{" and "}}")
-func (tm *TemplateManager) Delimiters(left string, right string) *TemplateManager {
-	tm.delimiterLeft	= left
-	tm.delimiterRight	= right
+// Adds a custom function for use in all templates within the instance of `TemplateManager`
+func (tm *TemplateManager) AddFunction(name string, function any) *TemplateManager {
+	tm.mutex.Lock()
+	tm.functions[name] = function
+	tm.mutex.Unlock()
 
 	return tm
 }
 
-// Enable debugging of the template build process
-func (tm *TemplateManager) Debug(debug bool) *TemplateManager {
-	tm.debug = debug
-
-	logErrors	= true
-	logWarnings	= true
-
-	return tm
-}
-
-// Enable re-rebuilding of the template bundle upon every page load (for development)
-func (tm *TemplateManager) Reload(reload bool) *TemplateManager {
-	tm.reload = reload
-
-	return tm
-}
-
-// Exclude a directory from the build scanning process (which only wants entry files).
-// This does not prevent files in this directory from being included via `template`.
-// Typically, directories containing base layouts and partials should be excluded.
-func (tm *TemplateManager) ExcludeDirectory(directory string) *TemplateManager {
-	if !slices.Contains(tm.excludedDirectories, directory) {
-		tm.excludedDirectories = append(tm.excludedDirectories, directory)
+// Adds multiple custom functions for use in all templates within the instance of `TemplateManager`
+// Function names are the map keys.
+func (tm *TemplateManager) AddFunctions(functions map[string]any) *TemplateManager {
+	tm.mutex.Lock()
+	for name, function := range functions {
+		tm.functions[name] = function
 	}
-
-	return tm
-}
-
-// Excludes multiple directories from the build scanning process (which only wants entry files).
-// This does not prevent files in these directories from being included via `template`.
-// Typically, directories containing base layouts and partials should be excluded.
-func (tm *TemplateManager) ExcludeDirectories(directories []string) *TemplateManager {
-	for _, directory := range directories {
-		tm.ExcludeDirectory(directory)
-	}
-
-	return tm
-}
-
-// Removes a directory that was previously excluded to allow it to feature in the build scanning process (which only wants entry files).
-func (tm *TemplateManager) RemoveExcludedDirectory(directory string) *TemplateManager {
-	if slices.Contains(tm.excludedDirectories, directory) {
-		index := slices.Index(tm.excludedDirectories, directory)
-		tm.excludedDirectories = append(tm.excludedDirectories[:index], tm.excludedDirectories[index + 1:]...)
-	}
+	tm.mutex.Unlock()
 
 	return tm
 }
@@ -221,23 +176,59 @@ func (tm *TemplateManager) AddParams(templateName string, params Params) *Templa
 	return tm
 }
 
-// Adds a custom function for use in all templates within the instance of `TemplateManager`
-func (tm *TemplateManager) AddFunction(name string, function any) *TemplateManager {
-	tm.mutex.Lock()
-	tm.functions[name] = function
-	tm.mutex.Unlock()
+// Sets the delimiters used by `text/template` (Default: "{{" and "}}")
+func (tm *TemplateManager) Delimiters(left string, right string) *TemplateManager {
+	tm.delimiterLeft	= left
+	tm.delimiterRight	= right
 
 	return tm
 }
 
-// Adds multiple custom functions for use in all templates within the instance of `TemplateManager`
-// Function names are the map keys.
-func (tm *TemplateManager) AddFunctions(functions map[string]any) *TemplateManager {
-	tm.mutex.Lock()
-	for name, function := range functions {
-		tm.functions[name] = function
+// Enable debugging of the template build process
+func (tm *TemplateManager) Debug(debug bool) *TemplateManager {
+	tm.debug = debug
+
+	logErrors	= true
+	logWarnings	= true
+
+	return tm
+}
+
+// Excludes multiple directories from the build scanning process (which only wants entry files).
+// This does not prevent files in these directories from being included via `template`.
+// Typically, directories containing base layouts and partials should be excluded.
+func (tm *TemplateManager) ExcludeDirectories(directories []string) *TemplateManager {
+	for _, directory := range directories {
+		tm.ExcludeDirectory(directory)
 	}
-	tm.mutex.Unlock()
+
+	return tm
+}
+
+// Exclude a directory from the build scanning process (which only wants entry files).
+// This does not prevent files in this directory from being included via `template`.
+// Typically, directories containing base layouts and partials should be excluded.
+func (tm *TemplateManager) ExcludeDirectory(directory string) *TemplateManager {
+	if !slices.Contains(tm.excludedDirectories, directory) {
+		tm.excludedDirectories = append(tm.excludedDirectories, directory)
+	}
+
+	return tm
+}
+
+// Enable re-rebuilding of the template bundle upon every page load (for development)
+func (tm *TemplateManager) Reload(reload bool) *TemplateManager {
+	tm.reload = reload
+
+	return tm
+}
+
+// Removes a directory that was previously excluded to allow it to feature in the build scanning process (which only wants entry files).
+func (tm *TemplateManager) RemoveExcludedDirectory(directory string) *TemplateManager {
+	if slices.Contains(tm.excludedDirectories, directory) {
+		index := slices.Index(tm.excludedDirectories, directory)
+		tm.excludedDirectories = append(tm.excludedDirectories[:index], tm.excludedDirectories[index + 1:]...)
+	}
 
 	return tm
 }
@@ -248,23 +239,6 @@ func (tm *TemplateManager) RemoveAllFunctions() *TemplateManager {
 	tm.mutex.Lock()
 	tm.functions = make(map[string]any)
 	tm.mutex.Unlock()
-
-	return tm
-}
-
-// Adds the default functions to the `TemplateManager` instance
-func (tm *TemplateManager) addDefaultFunctions() *TemplateManager {
-	tm.AddFunctions(getDefaultFunctions())
-
-	return tm
-}
-
-// Adds a `descendant` template to the `templateName` bundle
-func (tm *TemplateManager) addDescendant(templateName string, descendant string) *TemplateManager {
-	if _, ok := tm.descendants[templateName]; !ok {
-		tm.descendants[templateName] = []string{}
-	}
-	tm.descendants[templateName] = append(tm.descendants[templateName], descendant)
 
 	return tm
 }
@@ -356,6 +330,23 @@ func (tm *TemplateManager) Render(name string, params Params, writer io.Writer) 
 	}
 
 	return err
+}
+
+// Adds the default functions to the `TemplateManager` instance
+func (tm *TemplateManager) addDefaultFunctions() *TemplateManager {
+	tm.AddFunctions(getDefaultFunctions())
+
+	return tm
+}
+
+// Adds a `descendant` template to the `templateName` bundle
+func (tm *TemplateManager) addDescendant(templateName string, descendant string) *TemplateManager {
+	if _, ok := tm.descendants[templateName]; !ok {
+		tm.descendants[templateName] = []string{}
+	}
+	tm.descendants[templateName] = append(tm.descendants[templateName], descendant)
+
+	return tm
 }
 
 // Readies the parameters for a single template using nested variables from descendants
