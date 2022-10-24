@@ -1500,6 +1500,10 @@ func truncate(length reflect.Value, value reflect.Value) reflect.Value {
 
 	switch value.Kind() {
 		case reflect.String:
+			if intLength <= 0 {
+				return reflect.ValueOf("")
+			}
+
 			runes := []rune(value.String())
 			
 			if stringLength := len(runes); intLength >= stringLength {
@@ -1624,7 +1628,7 @@ func truncatewords(length reflect.Value, value reflect.Value) reflect.Value {
 
 	switch value.Kind() {
 		case reflect.String:
-			if intLength == 0 {
+			if intLength <= 0 {
 				return reflect.ValueOf("") 
 			}
 
