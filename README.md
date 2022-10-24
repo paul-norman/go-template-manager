@@ -100,7 +100,7 @@ tm.Delimiters("{%", "%}")
 
 ### Debugging
 
-During development it's often useful to see what is happening. Enabling debug mode outputs a log showing what happens upon parsing:
+During development it's often useful to see what is happening. Enabling debug mode outputs a log showing what happens upon parsing *(and forces warnings and errors to be shown in the log)*:
 
 ```go
 tm.Debug(true)
@@ -128,6 +128,45 @@ tm.ExcludeDirectories([]string{"layouts", "partials"})
 
 // Re-adds a previously excluded directory so that it will be parsed
 tm.RemoveExcludedDirectory("layouts")
+```
+
+## Global Options
+
+There are also several customisation options that apply globally to `templateManager` functions / use. These should be set **prior** to initialisation of the main store.
+
+```go
+import (
+	"time"
+	TM "github.com/paul-norman/go-template-manager"
+)
+
+// Control whether errors are written to the log
+TM.SetErrors(false)
+
+// Control whether warnings are written to the log
+TM.SetWarnings(warnings bool)
+
+// Sets the default format for the `date` function (default: d/m/Y)
+// May be in Go, PHP or Python format
+TM.SetDefaultDateFormat("d/M/Y")
+
+// Sets the default format for the `datetime` function (default: d/m/Y H:i)
+// May be in Go, PHP or Python format
+TM.SetDefaultDatetimeFormat("d/m/Y H:i")
+
+// Sets the default format for the `time` function (default: H:i)
+// May be in Go, PHP or Python format
+TM.SetDefaultTimeFormat("H:i")
+
+// Sets the default timezone `time.Location` used by date / time functions (default: UTC)
+location, _ := time.LoadLocation("ICT")
+TM.SetTimezoneLocation(location)
+
+// Sets the default timezone location used by date / time functions from a string (default: UTC)
+TM.SetTimezoneLocationString("ICT")
+
+// Sets the default timezone location used by date / time functions to a fixed numeric offset (default: UTC)
+TM.SetTimezoneFixed("ICT", 7 * 60 * 60) // UTC +7
 ```
 
 ## Setting Variables

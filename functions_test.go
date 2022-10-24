@@ -10,10 +10,10 @@ import (
 )
 
 func TestAASetup(tester  *testing.T) {
-	testsShowDetails = true
+	testsShowDetails	= true
 	testsShowSuccessful = false
-	logErrors	= false
-	logWarnings	= false
+	logErrors			= false
+	logWarnings			= false
 }
 
 // Should operate on numerics, strings, slices and maps directly
