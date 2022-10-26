@@ -23,32 +23,35 @@ templateManager also comes with a small set of extra convenience functions which
 package templateManager
 
 import (
-	//"embed"
+	"embed"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"text/template"
 
 	"golang.org/x/exp/slices"
+
+	"github.com/paul-norman/go-template-manager/fsWalk"
 )
 
+// Holds all templates and variables along with all required settings
 type TemplateManager struct {
 	templates 			map[string]*template.Template
 	params				map[string]map[string]any
 	descendants			map[string][]string
 	delimiterLeft		string
 	delimiterRight		string
+	fileSystem			http.FileSystem
 	directory			string
 	extension			string
 	excludedDirectories	[]string
-	layout				string
 	functions			map[string]any
 	mutex				sync.RWMutex
 	debug				bool
@@ -70,7 +73,28 @@ func Init(directory string, extension string) *TemplateManager {
 		directory:				directory,
 		extension:				extension,
 		excludedDirectories:	[]string{"layouts", "partials"},
-		layout:					"embed",
+		functions:				make(map[string]any),
+		debug:					false,
+		reload:					false,
+		parsed:					false,
+	}
+
+	templateManager.addDefaultFunctions()
+
+	return templateManager
+}
+
+func InitEmbed(fileSystem embed.FS, directory string, extension string) *TemplateManager {
+	templateManager := &TemplateManager{
+		templates:				make(map[string]*template.Template),
+		params:					make(map[string]map[string]any),
+		descendants:			make(map[string][]string),
+		delimiterLeft:			"{{",
+		delimiterRight:			"}}",
+		directory:				"/" + strings.TrimLeft(directory, " /"),
+		fileSystem:				http.FS(fileSystem),
+		extension:				extension,
+		excludedDirectories:	[]string{"layouts", "partials"},
 		functions:				make(map[string]any),
 		debug:					false,
 		reload:					false,
@@ -245,18 +269,20 @@ func (tm *TemplateManager) RemoveAllFunctions() *TemplateManager {
 
 // Triggers scanning of files and bundling of all templates
 func (tm *TemplateManager) Parse() error {
+	tm.mutex.Lock()
+	defer tm.mutex.Unlock()
+
 	if tm.parsed {
 		return nil
 	}
-
-	tm.mutex.Lock()
-	defer tm.mutex.Unlock()
 
 	if tm.debug {
 		logWarning("Parsing all templates...")
 	}
 
-	err := filepath.WalkDir(tm.directory, func(path string, info fs.DirEntry, err error) error {
+	var err error
+
+	walk := func(path string, info fs.DirEntry, err error) error {
 		if err != nil || info == nil {
 			return err
 		}
@@ -284,7 +310,13 @@ func (tm *TemplateManager) Parse() error {
 		}
 
 		return nil
-	})
+	}
+
+	if tm.fileSystem != nil {
+		err = fsWalk.WalkDir(tm.fileSystem, "/", walk)
+	} else {
+		err = filepath.WalkDir(tm.directory, walk)
+	}
 
 	if err == nil {
 		tm.parsed = true
@@ -409,7 +441,7 @@ func (tm *TemplateManager) reParseIndividualTemplate(path string) error {
 
 // Handles parsing an individual file
 func (tm *TemplateManager) parseFileDependencies(path string, name string, directory string, tmpl *template.Template) error {
-	dependencies, err := getFileDependencies(path, directory)
+	dependencies, err := tm.getFileDependencies(path, directory)
 	if err != nil {
 		return err
 	}
@@ -501,7 +533,8 @@ func (tm *TemplateManager) addTemplate(path string, name string, directory strin
 
 // Reads a file's contents and gets any extended templates too
 func (tm *TemplateManager) getFileContents(path string, directory string) ([]string, error) {
-	buffer, err := os.ReadFile(path)
+	//buffer, err := os.ReadFile(path)
+	buffer, err := fsWalk.ReadFile(path, tm.fileSystem)
 	if err != nil {
 		return []string{}, err
 	}
@@ -538,6 +571,47 @@ func (tm *TemplateManager) getFileContents(path string, directory string) ([]str
 	return append(contents, content), nil
 }
 
+// Recursively finds all file dependencies
+func (tm *TemplateManager) getFileDependencies(path string, directory string) ([]string, error) {
+	//buffer, err := os.ReadFile(path)
+	buffer, err := fsWalk.ReadFile(path, tm.fileSystem)
+	if err != nil {
+		return []string{}, err
+	}
+	dependencies := []string{}
+
+	findExtends, _		:= regexp.Compile("^\\s*{{\\s*extends\\s*[\"`]{1}([^\"]+)[\"`]{1}.*}}\\s*")
+	findTemplates, _	:= regexp.Compile("{{\\s*template\\s*[\"`]{1}([^\"]+)[\"`]{1}.*?}}")
+
+	if findExtends.Match(buffer) {
+		matches := findExtends.FindAllSubmatch(buffer, -1)
+		dependencies = append(dependencies, directory + "/" + string(matches[0][1]))
+	}
+
+	if findTemplates.Match(buffer) {
+		matches := findTemplates.FindAllSubmatch(buffer, -1)
+		for _, match := range matches {
+			dependencies = append(dependencies, directory + "/" + string(match[1]))
+		}
+	}
+
+	tmp := dependencies
+	for _, dependency := range tmp {
+		subDependencies, err := tm.getFileDependencies(dependency, directory)
+		if err != nil {
+			return []string{}, err
+		}
+
+		for _, subDependency := range subDependencies {
+			if !slices.Contains(dependencies, subDependency) {
+				dependencies = append(dependencies, subDependency)
+			}
+		}
+	}
+	
+	return dependencies, nil
+}
+
 // Parses a variable declared in a template file
 // (this system is very limited to preserve actual types / avoid interfaces and reflection)
 func (tm *TemplateManager) parseVariable(template string, name string, value string) {
@@ -563,8 +637,7 @@ func (tm *TemplateManager) parseVariableMap(template string, name string, value 
 		return
 	}
 
-	k := "" 
-	v := ""
+	k, v := "", ""
 	for k, v = range values {
 		break
 	}
@@ -574,133 +647,37 @@ func (tm *TemplateManager) parseVariableMap(template string, name string, value 
 
 	switch tK + tV {
 		case "stringstring": 
-			tmp := map[string]string{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(string)] = val.(string)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[string, string](values))
 		case "stringint":
-			tmp := map[string]int{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(string)] = val.(int)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[string, int](values))
 		case "stringfloat":
-			tmp := map[string]float64{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(string)] = val.(float64)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[string, float64](values))
 		case "stringbool":
-			tmp := map[string]bool{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(string)] = val.(bool)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[string, bool](values))
 		case "intstring": 
-			tmp := map[int]string{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(int)] = val.(string)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[int, string](values))
 		case "intint":
-			tmp := map[int]int{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(int)] = val.(int)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[int, int](values))
 		case "intfloat":
-			tmp := map[int]float64{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(int)] = val.(float64)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[int, float64](values))
 		case "intbool":
-			tmp := map[int]bool{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(int)] = val.(bool)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[int, bool](values))
 		case "floatstring": 
-			tmp := map[float64]string{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(float64)] = val.(string)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[float64, string](values))
 		case "floatint":
-			tmp := map[float64]int{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(float64)] = val.(int)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[float64, int](values))
 		case "floatfloat":
-			tmp := map[float64]float64{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(float64)] = val.(float64)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[float64, float64](values))
 		case "floatbool":
-			tmp := map[float64]bool{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(float64)] = val.(bool)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[float64, bool](values))
 		case "boolstring": 
-			tmp := map[bool]string{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(bool)] = val.(string)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[bool, string](values))
 		case "boolint":
-			tmp := map[bool]int{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(bool)] = val.(int)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[bool, int](values))
 		case "boolfloat":
-			tmp := map[bool]float64{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(bool)] = val.(float64)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[bool, float64](values))
 		case "boolbool":
-			tmp := map[bool]bool{}
-			for key, val := range values {
-				_, key := getVariableType(key)
-				_, val := getVariableType(val)
-				tmp[key.(bool)] = val.(bool)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableMap[bool, bool](values))
 	}
 }
 
@@ -719,39 +696,14 @@ func (tm *TemplateManager) parseVariableSlice(template string, name string, valu
 	t, _ := getVariableType(value)
 
 	switch t {
-		case "int": 
-			tmp := []int{}
-			for _, val := range values {
-				val, err := strconv.Atoi(val)
-				if err != nil {
-					logError(err.Error())
-					return	
-				}
-				tmp = append(tmp, val)
-			}
-			tm.AddParam(template, name, tmp)
+		case "string":
+			tm.AddParam(template, name, values)
+		case "int":
+			tm.AddParam(template, name, parseVariableSlice[int](values))
 		case "float":
-			tmp := []float64{}
-			for _, val := range values {
-				val, err := strconv.ParseFloat(val, 64)
-				if err != nil {
-					logError(err.Error())
-					return	
-				}
-				tmp = append(tmp, val)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableSlice[float64](values))
 		case "bool":
-			tmp := []bool{}
-			for _, val := range values {
-				val, err := strconv.ParseBool(val)
-				if err != nil {
-					logError(err.Error())
-					return	
-				}
-				tmp = append(tmp, val)
-			}
-			tm.AddParam(template, name, tmp)
+			tm.AddParam(template, name, parseVariableSlice[bool](values))
 		case "slice":
 			nestedType := "string"
 			if len(values[0]) > 0 {
@@ -761,117 +713,15 @@ func (tm *TemplateManager) parseVariableSlice(template string, name string, valu
 
 			switch nestedType {
 				case "int":
-					tmp := [][]int{}
-					for _, val := range values {
-						sub := []int{}
-						tmp2, _ := prepareSlice(val)
-						for _, subval := range tmp2 {
-							subval, err := strconv.Atoi(subval)
-							if err != nil {
-								logError(err.Error())
-								return	
-							}
-							sub = append(sub, subval)
-						}
-						tmp = append(tmp, sub)
-					}
-					tm.AddParam(template, name, tmp)
+					tm.AddParam(template, name, parseNestedVariableSlice[int](values))
 				case "float":
-					tmp := [][]float64{}
-					for _, val := range values {
-						sub := []float64{}
-						tmp2, _ := prepareSlice(val)
-						for _, subval := range tmp2 {
-							subval, err := strconv.ParseFloat(subval, 64)
-							if err != nil {
-								logError(err.Error())
-								return	
-							}
-							sub = append(sub, subval)
-						}
-						tmp = append(tmp, sub)
-					}
-					tm.AddParam(template, name, tmp)
+					tm.AddParam(template, name, parseNestedVariableSlice[float64](values))
 				case "bool":
-					tmp := [][]bool{}
-					for _, val := range values {
-						sub := []bool{}
-						tmp2, _ := prepareSlice(val)
-						for _, subval := range tmp2 {
-							subval, err := strconv.ParseBool(subval)
-							if err != nil {
-								logError(err.Error())
-								return	
-							}
-							sub = append(sub, subval)
-						}
-						tmp = append(tmp, sub)
-					}
-					tm.AddParam(template, name, tmp)
+					tm.AddParam(template, name, parseNestedVariableSlice[bool](values))
 				case "string":
-					tmp := [][]string{}
-					for _, val := range values {
-						sub := []string{}
-						tmp2, _ := prepareSlice(val)
-						sub = append(sub, tmp2...)
-						tmp = append(tmp, sub)
-					}
-					tm.AddParam(template, name, tmp)
+					tm.AddParam(template, name, parseNestedVariableSlice[string](values))
 			}
-
-		case "string":
-			tm.AddParam(template, name, values)
 	}
-}
-
-// Cleans a file path to be relative
-func cleanPath(path string, directory string) (string, error) {
-	file, err := filepath.Rel(directory, path)
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.ToSlash(file), nil
-}
-
-// Recursively finds all file dependencies
-func getFileDependencies(path string, directory string) ([]string, error) {
-	buffer, err := os.ReadFile(path)
-	if err != nil {
-		return []string{}, err
-	}
-	dependencies := []string{}
-
-	findExtends, _		:= regexp.Compile("^\\s*{{\\s*extends\\s*[\"`]{1}([^\"]+)[\"`]{1}.*}}\\s*")
-	findTemplates, _	:= regexp.Compile("{{\\s*template\\s*[\"`]{1}([^\"]+)[\"`]{1}.*?}}")
-
-	if findExtends.Match(buffer) {
-		matches := findExtends.FindAllSubmatch(buffer, -1)
-		dependencies = append(dependencies, directory + "/" + string(matches[0][1]))
-	}
-
-	if findTemplates.Match(buffer) {
-		matches := findTemplates.FindAllSubmatch(buffer, -1)
-		for _, match := range matches {
-			dependencies = append(dependencies, directory + "/" + string(match[1]))
-		}
-	}
-
-	tmp := dependencies
-	for _, dependency := range tmp {
-		subDependencies, err := getFileDependencies(dependency, directory)
-		if err != nil {
-			return []string{}, err
-		}
-
-		for _, subDependency := range subDependencies {
-			if !slices.Contains(dependencies, subDependency) {
-				dependencies = append(dependencies, subDependency)
-			}
-		}
-	}
-	
-	return dependencies, nil
 }
 
 // Check that the template file has a standard file extension
@@ -886,153 +736,12 @@ func checkAllowedExtension(file string, allowedExtensions []string) (string, err
 	return "", fmt.Errorf("no match")
 }
 
-// Determines a variable's (likely) basic type from a string representation of it
-func getVariableType(value string) (string, any) {
-	if strings.HasPrefix(value, "{") && strings.HasSuffix(value, "}") {
-		return "map", nil
-	} else if strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]") {
-		return "slice", nil
-	} else if val, err := strconv.Atoi(value); err == nil {
-		return "int", val
-	} else if val, err := strconv.ParseFloat(value, 64); err == nil {
-		return "float", val
-	} else if val, err := strconv.ParseBool(value); err == nil {
-		return "bool", val
-	}
-	
-	return "string", value
-}
-
-// Parses a string representation of a map into string values ready for type detection
-func prepareMap(value string) map[string]string {
-	value = value[1:len(value) - 1]
-	value = value + ","
-	m := make(map[string]string)
-
-	findStringMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
-
-	if findStringMap.MatchString(value) {
-		matches := findStringMap.FindAllStringSubmatch(value, -1)
-		for _, match := range matches {
-			m[match[1]] = match[2] 
-		}
-	} else {
-		findNumericMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*([\\-\\.\\d]+)\\s*,")
-
-		if findNumericMap.MatchString(value) {
-			matches := findNumericMap.FindAllStringSubmatch(value, -1)
-			for _, match := range matches {
-				m[match[1]] = match[2] 
-			}
-		}
-		/* 
-		else {
-			findSliceMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(\\[.*?\\])\\s*,")
-	
-			if findSliceMap.MatchString(value) {
-				matches := findSliceMap.FindAllStringSubmatch(value, -1)
-				for _, match := range matches {
-					m[match[1]] = match[2] 
-				}
-			}
-		}
-		*/
+// Cleans a file path to be relative
+func cleanPath(path string, directory string) (string, error) {
+	file, err := filepath.Rel(directory, path)
+	if err != nil {
+		return "", err
 	}
 
-	return m
-}
-
-// Parses a string representation of a slice into a slice of string values ready for type detection
-func prepareSlice(value string) ([]string, error) {
-	value = value[1:len(value) - 1]
-	var values = []string{}
-
-	if value[0:1] == "[" {
-		values, _ = prepareSliceSlice(value)
-	} else if strings.Contains(value, `"`) || strings.Contains(value, `'`) || strings.Contains(value, "`") {
-		values, _ = prepareStringSlice(value)
-	} else {
-		values, _ = prepareNumericSlice(value)
-	}
-
-	return values, nil
-}
-
-// Parses a string representation of a slice of slices into a slice of strings ready for type detection
-func prepareSliceSlice(value string) ([]string, error) {
-	value = value + ","
-	slice := []string{}
-
-	findSliceSlice, _ := regexp.Compile(`(\[.*?\])\s*,`)
-
-	if findSliceSlice.MatchString(value) {
-		matches := findSliceSlice.FindAllStringSubmatch(value, -1)
-		for _, match := range matches {
-			slice = append(slice, match[1])
-		}
-	}
-
-	return slice, nil
-}
-
-// Parses a string representation of a slice of strings into an actual slice of strings ready for type detection
-func prepareStringSlice(value string) ([]string, error) {
-	value = value + ","
-	slice := []string{}
-
-	// No backreferences in GoLang's RE2 regexp engine :-(
-	findStringSlice, _	:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
-
-	if findStringSlice.MatchString(value) {
-		matches := findStringSlice.FindAllStringSubmatch(value, -1)
-		for _, match := range matches {
-			val := strings.Replace(match[1], "\\`", "`", -1)
-			val = strings.Replace(val, `\"`, `"`, -1)
-			val = strings.Replace(val, "\\'", "'", -1)
-
-			slice = append(slice, val)
-		}
-	}
-
-	return slice, nil
-}
-
-// Parses a string representation of a slice of numbers into a slice of strings ready for type detection
-func prepareNumericSlice(value string) ([]string, error) {
-	value = value + ","
-	slice := []string{}
-
-	findNumericSlice, _	:= regexp.Compile(`\s*([\-\d\.]+)\s*,`)
-	if findNumericSlice.MatchString(value) {
-		matches := findNumericSlice.FindAllStringSubmatch(value, -1)
-		for _, match := range matches {
-			slice = append(slice, match[1])
-		}
-	}
-
-	return slice, nil
-}
-
-// Logs error messages
-func logError(err string) {
-	if logErrors {
-		fmt.Println("\033[31m" + err + "\033[0m")
-	}
-}
-
-// Logs warning messages
-func logWarning(warning string) {
-	if logWarnings {
-		fmt.Println("\033[33m" + warning + "\033[0m")
-	}
-}
-
-// Logs informational messages
-func logInformation(information string) {
-	fmt.Println("\033[36m" + information + "\033[0m")
-}
-
-// Logs success messages
-func logSuccess(success string) {
-	fmt.Println("\033[32m" + success + "\033[0m")
+	return filepath.ToSlash(file), nil
 }

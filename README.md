@@ -373,7 +373,6 @@ To illustrate the `templateManager` usage, a trivial example with 5 files can be
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	TM "github.com/paul-norman/go-template-manager"
@@ -465,6 +464,50 @@ Running the server and visiting `http://127.0.0.1:8080` in a browser would load 
 Visiting `http://127.0.0.1:8080/test` would load the `test.html` template with a title displaying: "default title" *(fallback)*, a description displaying: "Test description", and the `LanguageCode` set as "en-US" throughout.
 
 The `LanguageCode` defined in `meta.html` is never needed, but would be used throughout if neither the layout (`public.html`) nor the entry (e.g. `home.html`) templates defined it. This allows flexible fallback variables to be set in the templates themselves.
+
+## Embedded Example
+
+It is possible to embed the templates within the package (so that the files can be accessed using the embedded filesystem) using the `InitEmbed` method. This accepts an extra parameter that is the embedded files (`embed.FS`). The template folder directory value is optional, but to make the template naming behave identically to the `Init` version it is required to match the template directory name. Without it, all templates must use longer paths in block *(e.g. `/templates/partials/layout.html` and not `partials/layout.html`)*
+
+Just altering the main file from the simple example:
+
+`main.go`
+```go
+package main
+
+import (
+	"embed"
+	"net/http"
+
+	TM "github.com/paul-norman/go-template-manager"
+)
+
+var tm *TM.TemplateManager
+
+//go:embed templates/*
+var embeddedTemplates embed.FS
+
+func main() {
+	tm = TM.InitEmbed(embeddedTemplates, "templates", ".html").
+		ExcludeFolders([]string{"layouts", "partials"})
+	err := tm.Parse()
+	if err != nil {
+		panic(err)
+	}
+
+	http.HandleFunc("/", home)
+	http.HandleFunc("/test", test)
+	http.ListenAndServe(":8080", nil)
+}
+
+func home(w http.ResponseWriter, r *http.Request) {
+	tm.Render("home.html", TM.Params{"Title": "Home"}, w)
+}
+
+func test(w http.ResponseWriter, r *http.Request) {
+	tm.Render("test.html", TM.Params{"Title": "Test"}, w)
+}
+```
 
 ## Integrations
 
