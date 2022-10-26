@@ -109,13 +109,13 @@ func add(value reflect.Value, to reflect.Value) reflect.Value {
 		switch to.Kind() {
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, 
 			reflect.Uint64:
-				addVal, _ := reflectHelperConvertToFloat(value)
-				toVal, _ := reflectHelperConvertToFloat(to)
+				addVal, _ := reflectHelperConvertToFloat64(value)
+				toVal, _ := reflectHelperConvertToFloat64(to)
 
 				return reflect.ValueOf(int64(roundFloat(addVal + toVal, 0))).Convert(to.Type())
 			case reflect.Float32, reflect.Float64:
-				addVal, _ := reflectHelperConvertToFloat(value)
-				toVal, _ := reflectHelperConvertToFloat(to)
+				addVal, _ := reflectHelperConvertToFloat64(value)
+				toVal, _ := reflectHelperConvertToFloat64(to)
 
 				return reflect.ValueOf(addVal + toVal).Convert(to.Type())
 			case reflect.String:
@@ -249,7 +249,7 @@ func contains(find reflect.Value, within reflect.Value) bool {
 			logError(sig + fmt.Sprintf(" can't search within a string using a %s", find.Type()))
 			return false
 		case reflect.Array, reflect.Slice:
-			if reflectHelperGetSliceType(within) == reflectHelperGetTypeString(find.Type()) {
+			if reflectHelperGetSliceType(within) == find.Type().String() {
 				for i := 0; i < within.Len(); i++ {
 					if reflect.DeepEqual(within.Index(i).Interface(), find.Interface()) {
 						return true
@@ -260,7 +260,7 @@ func contains(find reflect.Value, within reflect.Value) bool {
 			}
 			return false
 		case reflect.Map:
-			if reflectHelperGetMapType(within) == reflectHelperGetTypeString(find.Type()) {
+			if reflectHelperGetMapType(within) == find.Type().String() {
 				iter := within.MapRange()
 				for iter.Next() {
 					if reflect.DeepEqual(iter.Value().Interface(), find.Interface()) {
@@ -275,7 +275,7 @@ func contains(find reflect.Value, within reflect.Value) bool {
 			for i := 0; i < within.NumField(); i++ {
 				field, err := reflectHelperGetStructValue(within, reflect.ValueOf(i))
 				if err == nil {
-					if reflectHelperGetTypeString(field.Type()) == reflectHelperGetTypeString(find.Type()) {
+					if field.Type().String() == find.Type().String() {
 						if reflect.DeepEqual(field.Interface(), find.Interface()) {
 							return true
 						}
@@ -423,7 +423,7 @@ func divide(divisor reflect.Value, value reflect.Value) reflect.Value {
 		return value
 	}
 
-	div, _ := reflectHelperConvertToFloat(divisor)
+	div, _ := reflectHelperConvertToFloat64(divisor)
 	if div == 0.0 {
 		logError(sig + " divisor must not be zero")
 		return value
@@ -432,11 +432,11 @@ func divide(divisor reflect.Value, value reflect.Value) reflect.Value {
 	switch value.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, 
 		reflect.Uint64:
-			val, _ := reflectHelperConvertToFloat(value)
+			val, _ := reflectHelperConvertToFloat64(value)
 			op := val / div
 			return reflect.ValueOf(int64(roundFloat(op, 0))).Convert(value.Type())
 		case reflect.Float32, reflect.Float64:
-			val, _ := reflectHelperConvertToFloat(value)
+			val, _ := reflectHelperConvertToFloat64(value)
 			op := val / div
 			return reflect.ValueOf(op).Convert(value.Type())
 		case reflect.String, reflect.Bool:
@@ -463,8 +463,8 @@ func divisibleBy(divisor reflect.Value, value reflect.Value) bool {
 	switch value.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, 
 		reflect.Uint64, reflect.Float32, reflect.Float64:
-			val, _ := reflectHelperConvertToFloat(value)
-			div, _ := reflectHelperConvertToFloat(divisor)
+			val, _ := reflectHelperConvertToFloat64(value)
+			div, _ := reflectHelperConvertToFloat64(divisor)
 
 			if div == 0.0 {
 				logWarning(sig + " divisor must not be zero")
@@ -964,13 +964,13 @@ func multiply(multiplier reflect.Value, value reflect.Value) reflect.Value {
 	switch value.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, 
 		reflect.Uint64:
-			val, _ := reflectHelperConvertToFloat(value)
-			mul, _ := reflectHelperConvertToFloat(multiplier)
+			val, _ := reflectHelperConvertToFloat64(value)
+			mul, _ := reflectHelperConvertToFloat64(multiplier)
 			op := val * mul
 			return reflect.ValueOf(int64(roundFloat(op, 0))).Convert(value.Type())
 		case reflect.Float32, reflect.Float64:
-			val, _ := reflectHelperConvertToFloat(value)
-			mul, _ := reflectHelperConvertToFloat(multiplier)
+			val, _ := reflectHelperConvertToFloat64(value)
+			mul, _ := reflectHelperConvertToFloat64(multiplier)
 			op := val * mul
 			return reflect.ValueOf(op).Convert(value.Type())
 		case reflect.String, reflect.Bool:
@@ -1359,13 +1359,13 @@ func subtract(value reflect.Value, from reflect.Value) reflect.Value {
 		switch from.Kind() {
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, 
 			reflect.Uint64:
-				subVal, _ := reflectHelperConvertToFloat(value)
-				fromVal, _ := reflectHelperConvertToFloat(from)
+				subVal, _ := reflectHelperConvertToFloat64(value)
+				fromVal, _ := reflectHelperConvertToFloat64(from)
 
 				return reflect.ValueOf(int64(roundFloat(fromVal - subVal, 0))).Convert(from.Type())
 			case reflect.Float32, reflect.Float64:
-				subVal, _ := reflectHelperConvertToFloat(value)
-				fromVal, _ := reflectHelperConvertToFloat(from)
+				subVal, _ := reflectHelperConvertToFloat64(value)
+				fromVal, _ := reflectHelperConvertToFloat64(from)
 
 				return reflect.ValueOf(fromVal - subVal).Convert(from.Type())
 			case reflect.String:
