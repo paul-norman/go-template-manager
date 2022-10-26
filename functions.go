@@ -39,7 +39,9 @@ func getDefaultFunctions() map[string]any {
 		"jsondecode":		jsonDecode,
 		"jsonencode":		jsonEncode,
 		"key":				keyFn,
+		"kind":				kind,
 		"last":				last,
+		"length":			length,
 		"localtime":		localtime,
 		"lower":			lower,
 		"ltrim":			ltrim,
@@ -56,6 +58,7 @@ func getDefaultFunctions() map[string]any {
 		"regexp":			regexpFindAll,
 		"regexpreplace":	regexpReplaceAll,
 		"replace":			replaceAll,
+		"round":			round,
 		"rtrim":			rtrim,
 		"split":			split,
 		"striptags":		stripTags,
@@ -68,6 +71,7 @@ func getDefaultFunctions() map[string]any {
 		"trim":				trim,
 		"truncate":			truncate,
 		"truncatewords":	truncatewords,
+		"type":				typeFn, 
 		"ul":				ul,
 		"upper":			upper,
 		"urldecode":		urlDecode,
@@ -776,6 +780,14 @@ func keyFn(input ...reflect.Value) reflect.Value {
 }
 
 /*
+ func kind[T any](value T) string
+Returns a string representation of the reflection Kind
+*/
+func kind(value reflect.Value) string {
+	return value.Kind().String()
+}
+
+/*
  func last(value string|slice|array) any
 Gets the last value from slices / arrays or the last word from strings.
 */
@@ -813,6 +825,36 @@ func last(value reflect.Value) reflect.Value {
 	}
 
 	return reflect.Value{}
+}
+
+/*
+ func length(value any) int
+Gets the length of any type without panics.
+*/
+func length(value reflect.Value) int {
+	sig		:= "length(value any)"
+	value	= reflectHelperUnpackInterface(value)
+
+	if !value.IsValid() {
+		return 0
+	}
+
+	switch value.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			return len(fmt.Sprintf("%v", value))
+		case reflect.Float32, reflect.Float64:
+			return len(fmt.Sprintf("%#v", value))
+		case reflect.Bool:
+			return 1
+		case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
+			return value.Len()
+		case reflect.Struct:
+			return value.NumField()
+		default:
+			logError(sig + fmt.Sprintf(" can't handle items of type %s", value.Type()))
+	}
+
+	return 0
 }
 
 /*
@@ -1209,6 +1251,27 @@ func replaceAll(find reflect.Value, replace reflect.Value, value reflect.Value) 
 	}
 
 	return recursiveHelper(value, reflect.ValueOf(replaceAll), find, replace)
+}
+
+/*
+ func round[T any](precision int, value T) T
+Rounds any floats to the required precision.
+If `value` is a slice, array or map it will apply this conversion to any float elements that they contain.
+*/
+func round(precision reflect.Value, value reflect.Value) reflect.Value {
+	sig := "round(precision int, value any)"
+	if precision.Kind() != reflect.Int {
+		logError(sig + " precision can only be an integer")
+		return value
+	}
+
+	switch value.Kind() {
+		case reflect.Float32, reflect.Float64:
+			val, _ := reflectHelperConvertToFloat64(value)
+			return reflect.ValueOf(roundFloat(val, uint(precision.Int()))).Convert(value.Type())
+	}
+
+	return recursiveHelper(value, reflect.ValueOf(round), precision)
 }
 
 /*
@@ -1739,6 +1802,14 @@ func truncatewords(length reflect.Value, value reflect.Value) reflect.Value {
 	}
 
 	return recursiveHelper(value, reflect.ValueOf(truncatewords), length)
+}
+
+/*
+ func type[T any](value T) string
+Returns a string representation of the reflection Type
+*/
+func typeFn(value reflect.Value) string {
+	return value.Type().String()
 }
 
 /*

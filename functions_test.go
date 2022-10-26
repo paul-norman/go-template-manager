@@ -16,7 +16,6 @@ func TestAASetup(tester  *testing.T) {
 	logWarnings			= false
 }
 
-// Should operate on numerics, strings, slices and maps directly
 func TestAdd(tester *testing.T) {
 	tests := []struct { input1, input2, expected any } {
 		{ false, true, true },
@@ -51,7 +50,6 @@ func TestAdd(tester *testing.T) {
 	formatPassFail("add", passed, failed)
 }
 
-// Should only operate on string-containing elements and pass anything else through
 func TestCapfirst(tester *testing.T) {
 	tests := []struct { input1, expected any } {
 		{ true, true },
@@ -776,6 +774,31 @@ func TestKey(tester *testing.T) {
 	formatPassFail("key", passed, failed)
 }
 
+func TestKind(tester *testing.T) {
+	tests := []struct { input1, expected any } {
+		{ true,  "bool" },
+		{ "anything", "string" },
+		{ -10, "int" },
+		{ int8(10), "int8" },
+		{ uint32(10), "uint32" },
+		{ 10.45, "float64" },
+		{ []string{"hello world"}, "slice" },
+		{ [1]string{"hello world"}, "array" },
+		{ map[string]string{"test": "hello world"}, "map" },
+		{ struct{Str string}{"hello world"}, "struct" },
+		{ struct{str string}{"hello world"}, "struct" },
+	}
+
+	passed, failed := 0, 0
+	for _, test := range tests {
+		if reflectCall1Arg(tester, kind, test.input1, test.expected) {
+			passed++
+		} else { failed++ }
+	}
+
+	formatPassFail("kind", passed, failed)
+}
+
 func TestLast(tester *testing.T) {
 	tests := []struct { input1, expected any } {
 		{ nil, nil },
@@ -812,6 +835,33 @@ func TestLast(tester *testing.T) {
 	}
 	
 	formatPassFail("last", passed, failed)
+}
+
+func TestLength(tester *testing.T) {
+	tests := []struct { input1, expected any } {
+		{ true, 1 },
+		{ "anything", 8 },
+		{ -10, 3 },
+		{ int8(10), 2 },
+		{ uint(10), 2 },
+		{ uint32(10), 2 },
+		{ 10.45, 5 },
+		{ 1.66666666667, 13 },
+		{ []string{"hello world"}, 1 },
+		{ [2]string{"hello", "world"}, 2 },
+		{ map[string]string{"test": "hello world"}, 1 },
+		{ struct{Str string}{"hello world"}, 1 },
+		{ struct{str string}{"hello world"}, 1 },
+	}
+
+	passed, failed := 0, 0
+	for _, test := range tests {
+		if reflectCall1Arg(tester, length, test.input1, test.expected) {
+			passed++
+		} else { failed++ }
+	}
+
+	formatPassFail("length", passed, failed)
 }
 
 func TestLocaltime(tester *testing.T) {
@@ -1210,6 +1260,38 @@ func TestReplaceAll(tester *testing.T) {
 	formatPassFail("replace", passed, failed)
 }
 
+func TestRound(tester *testing.T) {
+	tests := []struct { input1, input2, expected any } {
+		{ true, true, true },
+		{ "anything", false, false },
+		{ 0, 0, 0 },
+		{ 0, 10, 10 },
+		{ 0, -10, -10 },
+		{ 1, 10, 10 },
+		{ 0, 10.5, 11.0 },
+		{ 1, 10.5, 10.5 },
+		{ 2, 10.5, 10.5 },
+		{ 2, 10.6666666, 10.67 },
+		{ 2, float32(10.6666666), float32(10.67) },
+		{ 2, "test", "test" },
+		{ 2, []string{"hello world"}, []string{"hello world"} },
+		{ 2, []int{1, 2, 3}, []int{1, 2, 3} },
+		{ 2, []float64{1, 2.2, 3.33, 4.444, 5.5555}, []float64{1, 2.2, 3.33, 4.44, 5.56} },
+		{ 2, map[string]float64{"test": 3.14159}, map[string]float64{"test": 3.14} },
+		{ 2, struct{Val float64}{3.14159}, struct{Val float64}{3.14} },
+		{ 2, struct{val float64}{3.14159}, struct{val float64}{0} },
+	}
+
+	passed, failed := 0, 0
+	for _, test := range tests {
+		if reflectCall2Args(tester, round, test.input1, test.input2, test.expected) {
+			passed++
+		} else { failed++ }
+	}
+
+	formatPassFail("round", passed, failed)
+}
+
 func TestRtrim(tester *testing.T) {
 	tests := []struct { input1, input2, expected any } {
 		{ true, true, nil },
@@ -1600,6 +1682,31 @@ func TestTruncateWords(tester *testing.T) {
 	}
 
 	formatPassFail("truncatewords", passed, failed)
+}
+
+func TestType(tester *testing.T) {
+	tests := []struct { input1, expected any } {
+		{ true,  "bool" },
+		{ "anything", "string" },
+		{ -10, "int" },
+		{ int8(10), "int8" },
+		{ uint32(10), "uint32" },
+		{ 10.45, "float64" },
+		{ []string{"hello world"}, "[]string" },
+		{ [1]string{"hello world"}, "[1]string" },
+		{ map[string]string{"test": "hello world"}, "map[string]string" },
+		{ struct{Str string}{"hello world"}, "struct { Str string }" },
+		{ struct{str string}{"hello world"}, "struct { str string }" },
+	}
+
+	passed, failed := 0, 0
+	for _, test := range tests {
+		if reflectCall1Arg(tester, typeFn, test.input1, test.expected) {
+			passed++
+		} else { failed++ }
+	}
+
+	formatPassFail("type", passed, failed)
 }
 
 func TestUl(tester *testing.T) {

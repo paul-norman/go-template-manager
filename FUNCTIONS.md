@@ -2,7 +2,7 @@
 
 All functions in `templateManager` accept their principle argument **last** to allow simple chaining. *Efforts have been made to output clear errors and return suitable empty values rather than cause panics (a problem in several `text/template` functions)*.
 
-Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divisibleby`](#divisibleby), [`dl`](#dl), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`last`](#last), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`replace`](#replace), [`rtrim`](#rtrim), [`split`](#split), [`striptags`](#striptags), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
+Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divisibleby`](#divisibleby), [`dl`](#dl), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`split`](#split), [`striptags`](#striptags), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
 
 ## `add`
 
@@ -524,16 +524,38 @@ Very similar to the in-built `text/template` [`index`](BASICS.md#general-utility
 ```django
 {{ key 2 "string" }} <!-- r -->
 
-<!-- Slices / Arrays: .Test is ["first", "second", "third"]
+<!-- Slices / Arrays: .Test is ["first", "second", "third"] -->
 {{ key 2 .Test }} <!-- third -->
 {{ key 2 2 .Test }} <!-- i -->
 {{ key 2 2 0 .Test }} <!-- i -->
 {{ key 2 2 2 .Test }} <!-- -->
 
-<!-- Maps: .Test is ["first": ["nested": "nested-value"]]
+<!-- Maps: .Test is ["first": ["nested": "nested-value"]] -->
 {{ key "first" .Test }} <!-- ["nested": "nested-value"] -->
 {{ key "first" "nested" .Test }} <!-- nested-value -->
 {{ key "first" "nested" 3 .Test }} <!-- t -->
+```
+
+## `kind`
+
+```go
+func kind(value any) string
+```
+
+Returns the value's `reflect.Kind` as a string. Mainly useful for testing.
+
+```django
+{{ kind 3.14159 }} <!-- float64 -->
+{{ kind "test" }} <!-- string -->
+
+<!-- Slice: .Test is []int{1, 2, 3} -->
+{{ kind .Test }} <!-- slice -->
+
+<!-- Array: .Test is [3]int{1, 2, 3} -->
+{{ kind .Test }} <!-- array -->
+
+<!-- Map: .Test is map[int]string{2: "second", 1: "first"} -->
+{{ kind .Test }} <!-- map -->
 ```
 
 ## `last`
@@ -549,6 +571,27 @@ Gets the last value from slices / arrays or the last word from strings. **All ot
 
 <!-- .Test is [1, 2, 3] -->
 {{ last .Test }} <!-- 3 -->
+```
+
+## `length`
+
+```go
+func length(value any) int
+```
+
+Gets length of any type. Unlike the `text/template` function: `len`, the `length` function will work without panics on numeric types and booleans.
+
+```django
+{{ length "my test string" }} <!-- 14 -->
+{{ length 12 }} <!-- 2 -->
+{{ length -3.14159 }} <!-- 8 -->
+{{ length true }} <!-- 1 -->
+
+<!-- .Test is [1, 2, 3] -->
+{{ length .Test }} <!-- 3 -->
+
+<!-- .Test is [1:"first", 2:"second"] -->
+{{ length .Test }} <!-- 2 -->
 ```
 
 ## `localtime`
@@ -901,6 +944,21 @@ Returns new variable of the original `value` data type.
 <!-- test replace string where replace is replaced -->
 ```
 
+## `round`
+
+```go
+func round[T any](precision int, value T) T
+```
+
+Rounds floats to the passed number of decimal places (`precision`). If `value` is a slice, array or map it will apply this conversion to any float elements that they contain.
+
+Returns new variable of the original `value` data type.
+
+```django
+{{ round 3 3.14159 }}
+<!-- 3.1416 -->
+```
+
 ## `rtrim`
 
 ```go
@@ -1169,6 +1227,28 @@ Returns new variable of the original `value` data type.
 
 {{ truncatewords 3 `<a href="#test"><strong>hello world</strong></a> how are you?` }}
 <!-- <a href="#test"><strong>hello world</strong></a> how -->
+```
+
+## `type`
+
+```go
+func type(value any) string
+```
+
+Returns the value's `reflect.Type` as a string. Mainly useful for testing.
+
+```django
+{{ type 3.14159 }} <!-- float64 -->
+{{ type "test" }} <!-- string -->
+
+<!-- Slice: .Test is []int{1, 2, 3} -->
+{{ type .Test }} <!-- []int -->
+
+<!-- Array: .Test is [3]int{1, 2, 3} -->
+{{ type .Test }} <!-- [3]int -->
+
+<!-- Map: .Test is map[int]string{2: "second", 1: "first"} -->
+{{ type .Test }} <!-- map[int]string -->
 ```
 
 ## `ul`
