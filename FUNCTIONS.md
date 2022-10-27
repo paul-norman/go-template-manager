@@ -2,7 +2,7 @@
 
 All functions in `templateManager` accept their principle argument **last** to allow simple chaining. *Efforts have been made to output clear errors and return suitable empty values rather than cause panics (a problem in several `text/template` functions)*.
 
-Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divisibleby`](#divisibleby), [`dl`](#dl), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`split`](#split), [`striptags`](#striptags), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
+Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divisibleby`](#divisibleby), [`dl`](#dl), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`split`](#split), [`striptags`](#striptags), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
 
 ## `add`
 
@@ -401,6 +401,26 @@ Other data types will just return a string representation of themselves.
 </dl>
 ```
 
+## `equal`
+
+```go
+func equal(values ...any) bool
+```
+
+Tests whether any number of variables are equal. A safer alternative *(no panics)* for the `text/template` [`eq`](BASICS.md#`eq`) function. For numeric variables this is **loose** equality, in that types will be ignored (all values converted to `float64`) and compared with a small tolerance. This function is not safe for very large `uint64` values.
+
+```django
+{{ equal "hello" "hello" }} <!-- true -->
+{{ equal 1 1.0 }} <!-- true -->
+{{ equal 1 1.0000000000001 }} <!-- true -->
+{{ equal (divide 0.8 2.4) 3 }} <!-- true -->
+{{ equal 1 1.0 1.0000000000001 }} <!-- true -->
+{{ equal 1 1.0 1.0000000000002 }} <!-- false -->
+
+<!-- .Test1 and .Test2 are both [1, 2, 3] -->
+{{ equal .Test1 .Test2 }} <!-- true -->
+```
+
 ## `first`
 
 ```go
@@ -725,6 +745,28 @@ Returns new variable of the original `value` data type.
 
 ```django
 {{ nl2br "test\nstring" }} <!-- test<br>string -->
+```
+
+## `notequal`
+
+```go
+func notequal(values ...any) bool
+```
+
+Tests whether any number of variables are not equal. A safer alternative *(no panics)* for the `text/template` [`neq`](BASICS.md#`neq`) function. For numeric variables this is **loose** equality, in that types will be ignored (all values converted to `float64`) and compared with a small tolerance. This function is not safe for very large `uint64` values.
+
+```django
+{{ notequal "hello" "hello" }} <!-- false -->
+{{ notequal "hello" "Hello" }} <!-- true -->
+{{ notequal 1 2 }} <!-- true -->
+{{ notequal 1 1.0 }} <!-- false -->
+{{ notequal 1 1.0000000000001 }} <!-- false -->
+{{ notequal (divide 0.8 2.4) 3 }} <!-- false -->
+{{ notequal 1 1.0 1.0000000000001 }} <!-- false -->
+{{ notequal 1 1.0 1.0000000000002 }} <!-- true -->
+
+<!-- .Test1 and .Test2 are both [1, 2, 3] -->
+{{ notequal .Test1 .Test2 }} <!-- false -->
 ```
 
 ## `now`

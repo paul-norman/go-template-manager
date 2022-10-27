@@ -403,6 +403,55 @@ func TestDl(tester *testing.T) {
 	runTests("dl", tests, tester)
 }
 
+func TestEqual(tester *testing.T) {
+	tests2 := []struct { input1, input2, expected any } {
+		{ true, true, true },
+		{ false, false, true },
+		{ true, false, false },
+		{ 1, 1, true },
+		{ uint8(1), int64(1), true },
+		{ 1, 1.0, true },
+		{ 1, 1.000000000001, true },
+		{ "1", 1, false },
+		{ "hello world", "hello world", true },
+		{ "Hello world", "hello world", false },
+		{ "hello world", []string{"hello world"}, false },
+		{ []string{"hello world"}, []string{"hello world"}, true },
+		{ map[string]string{"test": "hello world"}, map[string]string{"test": "hello world"}, true },
+		{ map[string]string{"test1": "hello world"}, map[string]string{"test": "hello world"}, false },
+	}
+
+	tests3 := []struct { input1, input2, input3, expected any } {
+		{ true, true, true, true },
+		{ false, false, true, false },
+		{ true, false, false, false },
+		{ 1, 1, 1, true },
+		{ uint8(1), int64(1), float32(1), true },
+		{ 1, 1.0, int16(1), true },
+		{ 1, 1.000000000001, 0.999999999999, true },
+		{ "1", 1, 1, false },
+		{ "hello world", "hello world", "hello world", true },
+		{ "hello world", "hello world", []string{"hello world"}, false },
+		{ []string{"hello world"}, []string{"hello world"}, []string{"hello world"}, true },
+		{ map[string]string{"test": "hello world"}, map[string]string{"test": "hello world"}, map[string]string{"test": "hello world"}, true },
+		{ map[string]string{"test1": "hello world"}, map[string]string{"test1": "hello world"}, map[string]string{"test": "hello world"}, false },
+	}
+
+	passed, failed := 0, 0
+	for _, test := range tests2 {
+		if reflectCallVarArgs(tester, equal, []any{test.input1, test.input2}, test.expected) {
+			passed++
+		} else { failed++ }
+	}
+	for _, test := range tests3 {
+		if reflectCallVarArgs(tester, equal, []any{test.input1, test.input2, test.input3}, test.expected) {
+			passed++
+		} else { failed++ }
+	}
+	
+	formatPassFail("equal", passed, failed)
+}
+
 func TestFirst(tester *testing.T) {
 	tests := []struct { input1, expected any } {
 		{ nil, nil },

@@ -30,6 +30,7 @@ func getDefaultFunctions() map[string]any {
 		"divide":			divide,
 		"divisibleby":		divisibleBy,
 		"dl":				dl,
+		"equal":			equal,
 		"first":			first,
 		"firstof":			firstOf,
 		"formattime":		formattime,
@@ -48,6 +49,7 @@ func getDefaultFunctions() map[string]any {
 		"mktime":			mktime,
 		"multiply":			multiply,
 		"nl2br":			nl2br,
+		"notequal":			notequal,
 		"now":				now, 
 		"ol":				ol,
 		"ordinal":			ordinal,
@@ -487,6 +489,65 @@ For maps this will use the keys as the dt elements.
 */
 func dl(value reflect.Value) string {
 	return listHelper(value, "dl")
+}
+
+/*
+ func equal(values ...any) bool
+Determines whether any values are equal.
+*/
+func equal(values ...reflect.Value) bool {
+	sig := "equal(values ...any)"
+
+	if len(values) < 2 {
+		logWarning(sig + fmt.Sprintf(" at least two values required, %d provided", len(values)))
+		return false
+	}
+
+	for i, value := range values {
+		values[i] = reflectHelperUnpackInterface(value)
+
+		if !value.IsValid() {
+			logWarning(sig + " values cannot be untyped nil values")
+			return false
+		}
+
+		if i > 0 {
+			err := reflectHelperVeryLooseTypeCompatibility(value, values[i - 1])
+			if err != nil {
+				return false
+			}
+
+			switch value.Kind() {
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+					val1, _ := reflectHelperConvertToFloat64(value)
+					val2, _ := reflectHelperConvertToFloat64(values[i - 1])
+
+					if !equalFloats(val1, val2) {
+						return false
+					}
+				case reflect.String:
+					if value.String() != values[i - 1].String() {
+						return false
+					}
+				case reflect.Bool:
+					if value.Bool() != values[i - 1].Bool() {
+						return false
+					}
+				case reflect.Array, reflect.Slice:
+					if !reflect.DeepEqual(value.Slice(0, value.Len() - 1).Interface(), values[i - 1].Slice(0, values[i - 1].Len() - 1).Interface()) {
+						return false
+					}
+				case reflect.Map, reflect.Struct:
+					if !reflect.DeepEqual(value.Interface(), values[i - 1].Interface()) {
+						return false
+					}
+				default:
+					return false
+			}
+		}
+	}
+
+	return true
 }
 
 /*
@@ -988,6 +1049,14 @@ If `value` is a slice, array or map it will apply this conversion to any string 
 */
 func nl2br(value reflect.Value) reflect.Value {
 	return replaceAll(reflect.ValueOf("\n"), reflect.ValueOf("<br>"), value)
+}
+
+/*
+ func notequal(values ...any) bool
+Determines whether any values are not equal.
+*/
+func notequal(values ...reflect.Value) bool {
+	return !equal(values...)
 }
 
 /*

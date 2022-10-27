@@ -346,6 +346,8 @@ if eq x y // if x == y
 if ne x y // if x != y
 ```
 
+*(N.B. These functions panic if types do not match)*
+
 ### Relational Operators
 
 There are no simple relational operators such as `>`, `<`, `>=` and `<=` so they have become functions:

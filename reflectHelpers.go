@@ -646,7 +646,7 @@ func reflectHelperStrictTypeCompatibility(value1 reflect.Value, value2 reflect.V
 }
 
 /*
-Checks that the two values are of compatible types (e.g. any type of int, or roughly the right type of slice / array)
+Checks that the two values are of loosely compatible types (e.g. any type of loosely matching numeric, or roughly the right type of slice / array)
 */
 func reflectHelperLooseTypeCompatibility(value1 reflect.Value, value2 reflect.Value) error {
 	compatible := false
@@ -657,14 +657,73 @@ func reflectHelperLooseTypeCompatibility(value1 reflect.Value, value2 reflect.Va
 				case reflect.Bool:
 					compatible = true
 			}
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			switch value2.Kind() {
-				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					compatible = true
+			}
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			switch value2.Kind() {
+				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 					compatible = true
 			}
 		case reflect.Float32, reflect.Float64:
 			switch value2.Kind() {
 				case reflect.Float32, reflect.Float64:
+					compatible = true
+			}
+		case reflect.String:
+			switch value2.Kind() {
+				case reflect.String:
+					compatible = true
+			}
+		case reflect.Slice, reflect.Array:
+			switch value2.Kind() {
+				case reflect.Slice, reflect.Array:
+					//if err := reflectHelperLooseTypeCompatibility(reflect.Zero(value1.Type().Elem()), reflect.Zero(value2.Type().Elem())); err == nil {
+					if value1.Type().Elem() == value2.Type().Elem() {
+						compatible = true
+					}
+			}
+		case reflect.Map:
+			switch value2.Kind() {
+				case reflect.Map:
+					if value1.Type().Key() == value2.Type().Key() {
+						//if err := reflectHelperLooseTypeCompatibility(reflect.Zero(value1.Type().Elem()), reflect.Zero(value2.Type().Elem())); err == nil {
+						if value1.Type().Elem() == value2.Type().Elem() {
+							compatible = true
+						}
+					}
+			}
+		case reflect.Struct:
+			// TODO 
+			if value2.Kind() == reflect.Struct {
+				compatible = true
+			}
+	}
+	
+	if !compatible {
+		return fmt.Errorf("types do not match: %s vs %s", value1.Type(), value2.Type())
+	}
+
+	return nil
+}
+
+/*
+Checks that the two values are of very loosely compatible types (e.g. any type numeric, or roughly the right type of slice / array)
+*/
+func reflectHelperVeryLooseTypeCompatibility(value1 reflect.Value, value2 reflect.Value) error {
+	compatible := false
+
+	switch value1.Kind() {
+		case reflect.Bool:
+			switch value2.Kind() {
+				case reflect.Bool:
+					compatible = true
+			}
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+			switch value2.Kind() {
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
 					compatible = true
 			}
 		case reflect.String:
