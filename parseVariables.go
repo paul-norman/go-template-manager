@@ -25,7 +25,7 @@ func getVariableType(value string, b ...string) (string, any) {
 		return "int", val
 	} else if val, err := strconv.ParseFloat(value, 64); err == nil {
 		return "float", val
-	} else if val, err := strconv.ParseBool(value); err == nil {
+	} else if val, err := strconv.ParseBool(strings.ToLower(value)); err == nil {
 		return "bool", val
 	}
 	
@@ -46,8 +46,14 @@ func parseVariableMap[K string|int|float64|bool, V string|int|float64|bool](valu
 
 // Generic helper to parse supported slice types from a slice of strings to a slice of their actual type
 func parseVariableSlice[V string|int|float64|bool](values []string) []V {
-	value := values[0]
-	t, _ := getVariableType(value)
+	t := ""
+	var emptyV V
+	var emptyVInterface any = emptyV
+	if _, ok := emptyVInterface.(int); ok {
+		t = "int"
+	} else if _, ok := emptyVInterface.(float64); ok {
+		t = "float"
+	}
 	
 	tmp := []V{}
 	for _, val := range values {
@@ -60,13 +66,19 @@ func parseVariableSlice[V string|int|float64|bool](values []string) []V {
 
 // Generic helper to parse supported nested slice types from a slice of strings to a slice of their actual type
 func parseNestedVariableSlice[V string|int|float64|bool](values []string) [][]V {
+	t := ""
+	var emptyV V
+	var emptyVInterface any = emptyV
+	if _, ok := emptyVInterface.(int); ok {
+		t = "int"
+	} else if _, ok := emptyVInterface.(float64); ok {
+		t = "float"
+	}
+
 	tmp := [][]V{}
 	for _, val := range values {
 		sub := []V{}
-		tmp2, _ := prepareSlice(val)
-
-		value := tmp2[0]
-		t, _ := getVariableType(value)
+		tmp2 := prepareSlice(val)
 
 		for _, subval := range tmp2 {
 			_, v := getVariableType(subval, t)
@@ -84,57 +96,164 @@ func prepareMap(value string) map[string]string {
 	value = value + ","
 	m := make(map[string]string)
 
-	findStringMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	findStringStringMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	if findStringStringMap.MatchString(value) {
+		matches := findStringStringMap.FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			m[match[1]] = match[2]
+		}
 
-	if findStringMap.MatchString(value) {
-		matches := findStringMap.FindAllStringSubmatch(value, -1)
+		return m
+	}
+	
+	findStringNumericMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*([\\-\\.\\d]+)\\s*,")
+	if findStringNumericMap.MatchString(value) {
+		matches := findStringNumericMap.FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			m[match[1]] = match[2]
+		}
+
+		return m
+	}
+
+	findStringBoolMap, _ := regexp.Compile("(?i)[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(true|false)\\s*,")
+	if findStringBoolMap.MatchString(value) {
+		matches := findStringBoolMap.FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			m[match[1]] = strings.ToLower(match[2])
+		}
+
+		return m
+	}
+
+	findNumericStringMap, _ := regexp.Compile("([\\-\\.\\d]+)\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	if findNumericStringMap.MatchString(value) {
+		matches := findNumericStringMap.FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			m[match[1]] = match[2]
+		}
+
+		return m
+	}
+
+	findNumericNumericMap, _ := regexp.Compile(`([\-\.\d]+)\s*:\s*([\-\.\d]+)\s*,`)
+	if findNumericNumericMap.MatchString(value) {
+		matches := findNumericNumericMap.FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			m[match[1]] = match[2]
+		}
+
+		return m
+	}
+
+	findNumericBoolMap, _ := regexp.Compile(`(?i)([\-\.\d]+)\s*:\s*(true|false)\s*,`)
+	if findNumericBoolMap.MatchString(value) {
+		matches := findNumericBoolMap.FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			m[match[1]] = strings.ToLower(match[2])
+		}
+
+		return m
+	}
+
+	findBoolStringMap, _ := regexp.Compile("(?i)(true|false)\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	if findBoolStringMap.MatchString(value) {
+		matches := findBoolStringMap.FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			m[strings.ToLower(match[1])] = match[2]
+		}
+
+		return m
+	}
+
+	findBoolNumericMap, _ := regexp.Compile(`(?i)(true|false)\s*:\s*([\-\.\d]+)\s*,`)
+	if findBoolNumericMap.MatchString(value) {
+		matches := findBoolNumericMap.FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			m[strings.ToLower(match[1])] = match[2]
+		}
+
+		return m
+	}
+
+	findBoolBoolMap, _ := regexp.Compile(`(?i)(true|false)\s*:\s*(true|false)\s*,`)
+	if findBoolBoolMap.MatchString(value) {
+		matches := findBoolBoolMap.FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			m[strings.ToLower(match[1])] = strings.ToLower(match[2])
+		}
+
+		return m
+	}
+
+	/* 
+	findSliceMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(\\[.*?\\])\\s*,")
+
+	if findSliceMap.MatchString(value) {
+		matches := findSliceMap.FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			m[match[1]] = match[2] 
 		}
-	} else {
-		findNumericMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*([\\-\\.\\d]+)\\s*,")
-
-		if findNumericMap.MatchString(value) {
-			matches := findNumericMap.FindAllStringSubmatch(value, -1)
-			for _, match := range matches {
-				m[match[1]] = match[2] 
-			}
-		}
-		/* 
-		else {
-			findSliceMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(\\[.*?\\])\\s*,")
-	
-			if findSliceMap.MatchString(value) {
-				matches := findSliceMap.FindAllStringSubmatch(value, -1)
-				for _, match := range matches {
-					m[match[1]] = match[2] 
-				}
-			}
-		}
-		*/
 	}
+	*/
 
 	return m
 }
 
+// Parses a string representation of a slice of booleans into a slice of strings ready for type detection
+func prepareBooleanSlice(value string) []string {
+	value = value + ","
+	slice := []string{}
+
+	findBooleanSlice, _	:= regexp.Compile(`(?i)\s*(true|false)\s*,`)
+	if findBooleanSlice.MatchString(value) {
+		matches := findBooleanSlice.FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			slice = append(slice, strings.ToLower(match[1]))
+		}
+	}
+
+	return slice
+}
+
+// Parses a string representation of a slice of numbers into a slice of strings ready for type detection
+func prepareNumericSlice(value string) []string {
+	value = value + ","
+	slice := []string{}
+
+	findNumericSlice, _	:= regexp.Compile(`\s*([\-\d\.]+)\s*,`)
+	if findNumericSlice.MatchString(value) {
+		matches := findNumericSlice.FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			slice = append(slice, match[1])
+		}
+	}
+
+	return slice
+}
+
 // Parses a string representation of a slice into a slice of string values ready for type detection
-func prepareSlice(value string) ([]string, error) {
+func prepareSlice(value string) []string {
 	value = value[1:len(value) - 1]
 	var values = []string{}
 
 	if value[0:1] == "[" {
-		values, _ = prepareSliceSlice(value)
+		values = prepareSliceSlice(value)
 	} else if strings.Contains(value, `"`) || strings.Contains(value, `'`) || strings.Contains(value, "`") {
-		values, _ = prepareStringSlice(value)
+		values = prepareStringSlice(value)
 	} else {
-		values, _ = prepareNumericSlice(value)
+		values = prepareNumericSlice(value)
 	}
 
-	return values, nil
+	if len(values) == 0 {
+		values = prepareBooleanSlice(value)
+	}
+
+	return values
 }
 
 // Parses a string representation of a slice of slices into a slice of strings ready for type detection
-func prepareSliceSlice(value string) ([]string, error) {
+func prepareSliceSlice(value string) []string {
 	value = value + ","
 	slice := []string{}
 
@@ -147,15 +266,15 @@ func prepareSliceSlice(value string) ([]string, error) {
 		}
 	}
 
-	return slice, nil
+	return slice
 }
 
 // Parses a string representation of a slice of strings into an actual slice of strings ready for type detection
-func prepareStringSlice(value string) ([]string, error) {
+func prepareStringSlice(value string) []string {
 	value = value + ","
 	slice := []string{}
 
-	// No backreferences in GoLang's RE2 regexp engine :-(
+	// No back-references in GoLang's RE2 regexp engine :-(
 	findStringSlice, _	:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
 
 	if findStringSlice.MatchString(value) {
@@ -169,21 +288,5 @@ func prepareStringSlice(value string) ([]string, error) {
 		}
 	}
 
-	return slice, nil
-}
-
-// Parses a string representation of a slice of numbers into a slice of strings ready for type detection
-func prepareNumericSlice(value string) ([]string, error) {
-	value = value + ","
-	slice := []string{}
-
-	findNumericSlice, _	:= regexp.Compile(`\s*([\-\d\.]+)\s*,`)
-	if findNumericSlice.MatchString(value) {
-		matches := findNumericSlice.FindAllStringSubmatch(value, -1)
-		for _, match := range matches {
-			slice = append(slice, match[1])
-		}
-	}
-
-	return slice, nil
+	return slice
 }

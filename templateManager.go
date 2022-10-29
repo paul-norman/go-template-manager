@@ -685,7 +685,7 @@ func (tm *TemplateManager) parseVariableMap(template string, name string, value 
 // Empty slices are string slices.
 // (this system is very limited to preserve actual types / avoid interfaces and reflection)
 func (tm *TemplateManager) parseVariableSlice(template string, name string, value string) {
-	values, _ := prepareSlice(value)
+	values := prepareSlice(value)
 
 	if len(values) == 0 {
 		tm.AddParam(template, name, values)
@@ -707,7 +707,7 @@ func (tm *TemplateManager) parseVariableSlice(template string, name string, valu
 		case "slice":
 			nestedType := "string"
 			if len(values[0]) > 0 {
-				tmp, _ := prepareSlice(values[0])
+				tmp := prepareSlice(values[0])
 				nestedType, _ = getVariableType(tmp[0])
 			}
 

@@ -1,23 +1,22 @@
 package templateManager
 
 import (
-	"fmt"
 	"reflect"
-	"runtime"
-	"strings"
 	"testing"
 	"time"
 )
 
-func TestAASetup(tester  *testing.T) {
+func TestAAFunctionsSetup(tester  *testing.T) {
 	testsShowDetails	= true
 	testsShowSuccessful = false
 	logErrors			= false
 	logWarnings			= false
+
+	testFormatTitle("functions")
 }
 
 func TestAdd(tester *testing.T) {
-	tests := []struct { input1, input2, expected any } {
+	tests := []struct{ input1, input2, expected any } {
 		{ false, true, true },
 		{ true, false, false },
 		{ int8(10), int8(20), int8(30) },
@@ -40,18 +39,11 @@ func TestAdd(tester *testing.T) {
 		{ struct{ Str string }{"add"}, struct{ string }{"to"}, struct{ string }{"to"} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, add, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("add", passed, failed)
+	testRunArgTests(add, tests, tester)
 }
 
 func TestCapfirst(tester *testing.T) {
-	tests := []struct { input1, expected any } {
+	tests := []struct{ input1, expected any } {
 		{ true, true },
 		{ false, false },
 		{ 0, 0 },
@@ -67,18 +59,11 @@ func TestCapfirst(tester *testing.T) {
 		{ struct{str string}{"test"}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, capfirst, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("capfirst", passed, failed)
+	testRunArgTests(capfirst, tests, tester)
 }
 
 func TestCollection(tester *testing.T) {
-	tests := []struct { inputs []any; result any; expected any } {
+	tests := []struct{ inputs []any; result any; expected any } {
 		{ []any{}, collection(), map[string]any{} },
 		{ []any{0}, collection(0), map[string]any{} },
 		{ []any{0, 0}, collection(0, 0), map[string]any{} },
@@ -86,7 +71,7 @@ func TestCollection(tester *testing.T) {
 		{ []any{"var1", 0, "var2", true}, collection("var1", 0, "var2", true), map[string]any{ "var1": 0, "var2": true } },
 	}
 
-	runTests("collection", tests, tester)
+	testRunTests("collection", tests, tester)
 }
 
 func TestContains(tester *testing.T) {
@@ -103,14 +88,7 @@ func TestContains(tester *testing.T) {
 		{ "world", struct{ str1, str2 string }{ "test", "hello world" }, false },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, contains, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-	
-	formatPassFail("contains", passed, failed)
+	testRunArgTests(contains, tests, tester)
 }
 
 func TestCut(tester *testing.T) {
@@ -127,14 +105,7 @@ func TestCut(tester *testing.T) {
 		{ "world", struct{ str1, str2 string }{"test", "hello world"}, struct{ str1, str2 string }{"", ""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, cut, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-	
-	formatPassFail("cut", passed, failed)
+	testRunArgTests(cut, tests, tester)
 }
 
 func TestDate(tester *testing.T) {
@@ -209,7 +180,7 @@ func TestDate(tester *testing.T) {
 		{ []any{"D d M y", "ANSIC", testTimeANSIC}, date("D d M y", "ANSIC", testTimeANSIC), testTime.Format("Mon 02 Jan 06") },
 	}
 
-	runTests("date", tests, tester)
+	testRunTests("date", tests, tester)
 }
 
 func TestDatetime(tester *testing.T) {
@@ -284,7 +255,7 @@ func TestDatetime(tester *testing.T) {
 		{ []any{"D d M y H:i", "ANSIC", testTimeANSIC}, datetime("D d M y H:i", "ANSIC", testTimeANSIC), testTime.Format("Mon 02 Jan 06 15:04") },
 	}
 
-	runTests("datetime", tests, tester)
+	testRunTests("datetime", tests, tester)
 }
 
 func TestDefault(tester *testing.T) {
@@ -309,14 +280,7 @@ func TestDefault(tester *testing.T) {
 		{ struct{ string string }{"default val"}, struct{ string string }{"test val"}, struct{ string string }{"test val"} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, defaultVal, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("default", passed, failed)
+	testRunArgTests(defaultVal, tests, tester)
 }
 
 func TestDivide(tester *testing.T) {
@@ -339,14 +303,7 @@ func TestDivide(tester *testing.T) {
 		{ 5, struct{ num1, num2 int }{10, 20}, struct{ num1, num2 int }{0, 0} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, divide, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("divide", passed, failed)
+	testRunArgTests(divide, tests, tester)
 }
 
 func TestDivisibleBy(tester *testing.T) {
@@ -370,37 +327,30 @@ func TestDivisibleBy(tester *testing.T) {
 		{ 5, struct{ num1, num2 int }{10, 20}, false },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, divisibleBy, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("divisibleby", passed, failed)
+	testRunArgTests(divisibleBy, tests, tester)
 }
 
 func TestDl(tester *testing.T) {
-	tests := []struct { inputs []any; result any; expected any } {
-		{ []any{false}, dl(reflect.ValueOf(false)), "false" },
-		{ []any{true}, dl(reflect.ValueOf(true)), "true" },
-		{ []any{0}, dl(reflect.ValueOf(0)), "0" },
-		{ []any{1}, dl(reflect.ValueOf(1)), "1" },
-		{ []any{-1}, dl(reflect.ValueOf(-1)), "-1" },
-		{ []any{1.5}, dl(reflect.ValueOf(1.5)), "1.5" },
-		{ []any{-1.5}, dl(reflect.ValueOf(-1.5)), "-1.5" },
-		{ []any{"value1"}, dl(reflect.ValueOf("value1")), "value1" },
-		{ []any{[]int{1, 2}}, dl(reflect.ValueOf([]int{1, 2})), "<dl><dd>1</dd><dd>2</dd></dl>" },
-		{ []any{[]string{"value1", "value2"}}, dl(reflect.ValueOf([]string{"value1", "value2"})), "<dl><dd>value1</dd><dd>value2</dd></dl>" },
-		{ []any{[2]int{1, 2}}, dl(reflect.ValueOf([2]int{1, 2})), "<dl><dd>1</dd><dd>2</dd></dl>" },
-		{ []any{[2]string{"value1", "value2"}}, dl(reflect.ValueOf([2]string{"value1", "value2"})), "<dl><dd>value1</dd><dd>value2</dd></dl>" },
-		{ []any{map[int]string{1: "value1", 2: "value2"}}, dl(reflect.ValueOf(map[int]string{1: "value1", 2: "value2"})), "<dl><dt>1</dt><dd>value1</dd><dt>2</dt><dd>value2</dd></dl>" },
-		{ []any{map[string]string{"title1": "value1", "title2": "value2"}}, dl(reflect.ValueOf(map[string]string{"title1": "value1", "title2": "value2"})), "<dl><dt>title1</dt><dd>value1</dd><dt>title2</dt><dd>value2</dd></dl>" },
-		{ []any{[][]string{{"subvalue1", "subvalue2"}, {"subvalue3", "subvalue4"}}}, dl(reflect.ValueOf([][]string{{"subvalue1", "subvalue2"}, {"subvalue3", "subvalue4"}})), "<dl><dd><dl><dd>subvalue1</dd><dd>subvalue2</dd></dl></dd><dd><dl><dd>subvalue3</dd><dd>subvalue4</dd></dl></dd></dl>" },
-		{ []any{map[string]map[string]string{"title1": {"nested1": "subvalue1", "sub2": "subvalue2"}}}, dl(reflect.ValueOf(map[string]map[string]string{"title1": {"nested1": "subvalue1", "sub2": "subvalue2"}})), "<dl><dt>title1</dt><dd><dl><dt>nested1</dt><dd>subvalue1</dd><dt>sub2</dt><dd>subvalue2</dd></dl></dd></dl>" },	
+	tests := []struct { input1, expected any } {
+		{ false, "false" },
+		{ true, "true" },
+		{ 0, "0" },
+		{ 1, "1" },
+		{ -2, "-2" },
+		{ 3.5, "3.5" },
+		{ input1: -4.6, expected: "-4.6" },
+		{ "test string", "test string" },
+		{ []int{1, 2}, "<dl><dd>1</dd><dd>2</dd></dl>" },
+		{ [2]int{1, 2}, "<dl><dd>1</dd><dd>2</dd></dl>" },
+		{ []string{"value1", "value2"}, "<dl><dd>value1</dd><dd>value2</dd></dl>" },
+		{ [2]string{"value1", "value2"}, "<dl><dd>value1</dd><dd>value2</dd></dl>" },
+		{ map[int]string{1: "value1", 2: "value2"}, "<dl><dt>1</dt><dd>value1</dd><dt>2</dt><dd>value2</dd></dl>" },
+		{ map[string]string{"title1": "value1", "title2": "value2"}, "<dl><dt>title1</dt><dd>value1</dd><dt>title2</dt><dd>value2</dd></dl>" },
+		{ [][]string{{"subvalue1", "subvalue2"}, {"subvalue3", "subvalue4"}}, "<dl><dd><dl><dd>subvalue1</dd><dd>subvalue2</dd></dl></dd><dd><dl><dd>subvalue3</dd><dd>subvalue4</dd></dl></dd></dl>" },
+		{ map[string]map[string]string{"title1": {"nested1": "subvalue1", "sub2": "subvalue2"}}, "<dl><dt>title1</dt><dd><dl><dt>nested1</dt><dd>subvalue1</dd><dt>sub2</dt><dd>subvalue2</dd></dl></dd></dl>" },
 	}
 
-	runTests("dl", tests, tester)
+	testRunArgTests(dl, tests, tester)
 }
 
 func TestEqual(tester *testing.T) {
@@ -439,17 +389,17 @@ func TestEqual(tester *testing.T) {
 
 	passed, failed := 0, 0
 	for _, test := range tests2 {
-		if reflectCallVarArgs(tester, equal, []any{test.input1, test.input2}, test.expected) {
+		if testCallVarArgs(tester, equal, []any{test.input1, test.input2}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
 	for _, test := range tests3 {
-		if reflectCallVarArgs(tester, equal, []any{test.input1, test.input2, test.input3}, test.expected) {
+		if testCallVarArgs(tester, equal, []any{test.input1, test.input2, test.input3}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
 	
-	formatPassFail("equal", passed, failed)
+	testFormatPassFail("equal", passed, failed)
 }
 
 func TestFirst(tester *testing.T) {
@@ -480,14 +430,7 @@ func TestFirst(tester *testing.T) {
 		{ struct{ str1, str2 string } {"first", "last"}, "first" },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, first, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-	
-	formatPassFail("first", passed, failed)
+	testRunArgTests(first, tests, tester)
 }
 
 func TestFirstOf(tester *testing.T) {
@@ -532,24 +475,22 @@ func TestFirstOf(tester *testing.T) {
 
 	passed, failed := 0, 0
 	for _, test := range tests1 {
-		if reflectCallVarArgs(tester, firstOf, []any{test.input1}, test.expected) {
+		if testCallVarArgs(tester, firstOf, []any{test.input1}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
-
 	for _, test := range tests2 {
-		if reflectCallVarArgs(tester, firstOf, []any{test.input1, test.input2}, test.expected) {
+		if testCallVarArgs(tester, firstOf, []any{test.input1, test.input2}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
-
 	for _, test := range tests3 {
-		if reflectCallVarArgs(tester, firstOf, []any{test.input1, test.input2, test.input3}, test.expected) {
+		if testCallVarArgs(tester, firstOf, []any{test.input1, test.input2, test.input3}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
 	
-	formatPassFail("firstof", passed, failed)
+	testFormatPassFail("firstof", passed, failed)
 }
 
 func TestFormatTime(tester *testing.T) {
@@ -562,7 +503,7 @@ func TestFormatTime(tester *testing.T) {
 		{ []any{testTime}, formattime("%d/%m/%Y %H:%M", testTime), testTime.Format("02/01/2006 15:04") },
 	}
 
-	runTests("formattime", tests, tester)
+	testRunTests("formattime", tests, tester)
 }
 
 func TestHtmlDecode(tester *testing.T) {
@@ -587,14 +528,7 @@ func TestHtmlDecode(tester *testing.T) {
 		{ struct{ string1, string2 string }{"string without html", "&quot;string&quot; &lt;strong&gt;with&lt;/strong&gt; &#39;html entities&#x27; &amp;amp; other &#34;nasty&#x22; stuff"}, struct{ string1, string2 string }{"", ""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, htmlDecode, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("htmldecode", passed, failed)
+	testRunArgTests(htmlDecode, tests, tester)
 }
 
 func TestHtmlEncode(tester *testing.T) {
@@ -616,14 +550,7 @@ func TestHtmlEncode(tester *testing.T) {
 		{ struct{ string1, string2 string }{"string without html", "&#34;string&#34; &lt;strong&gt;with&lt;/strong&gt; &#39;html entities&#39; &amp;amp; other &#34;nasty&#34; stuff"}, struct{ string1, string2 string }{"", ""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, htmlEncode, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("htmlencode", passed, failed)
+	testRunArgTests(htmlEncode, tests, tester)
 }
 
 func TestJoin(tester *testing.T) {
@@ -649,7 +576,7 @@ func TestJoin(tester *testing.T) {
 		{ []any{", ", struct{ first string; second int; third float64 } {"first", 1, 1.1}}, join(", ", reflect.ValueOf(struct{ first string; second int; third float64 } {"first", 1, 1.1})), "first, 1, 1.1" },
 	}
 
-	runTests("join", tests, tester)
+	testRunTests("join", tests, tester)
 }
 
 func TestJsonDecode(tester *testing.T) {
@@ -674,7 +601,7 @@ func TestJsonDecode(tester *testing.T) {
 		{ []any{`{"First":"first","Second":1,"Third":1.1}`}, jsonDecode(`{"First":"first","Second":1,"Third":1.1}`), map[string]any{"First":"first", "Second":1.0, "Third":1.1} },
 	}
 
-	runTests("jsonDecode", tests, tester)
+	testRunTests("jsonDecode", tests, tester)
 }
 
 func TestJsonEncode(tester *testing.T) {
@@ -701,7 +628,7 @@ func TestJsonEncode(tester *testing.T) {
 		{ []any{struct{ First string; Second int; Third float64 } {"first", 1, 1.1}}, jsonEncode(struct{ First string; Second int; Third float64 } {"first", 1, 1.1}), `{"First":"first","Second":1,"Third":1.1}` },
 	}
 
-	runTests("jsonEncode", tests, tester)
+	testRunTests("jsonEncode", tests, tester)
 }
 
 func TestKey(tester *testing.T) {
@@ -803,24 +730,22 @@ func TestKey(tester *testing.T) {
 
 	passed, failed := 0, 0
 	for _, test := range tests1 {
-		if reflectCallVarArgs(tester, keyFn, []any{test.input1}, test.expected) {
+		if testCallVarArgs(tester, keyFn, []any{test.input1}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
-
 	for _, test := range tests2 {
-		if reflectCallVarArgs(tester, keyFn, []any{test.input1, test.input2}, test.expected) {
+		if testCallVarArgs(tester, keyFn, []any{test.input1, test.input2}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
-
 	for _, test := range tests3 {
-		if reflectCallVarArgs(tester, keyFn, []any{test.input1, test.input2, test.input3}, test.expected) {
+		if testCallVarArgs(tester, keyFn, []any{test.input1, test.input2, test.input3}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
 	
-	formatPassFail("key", passed, failed)
+	testFormatPassFail("key", passed, failed)
 }
 
 func TestKind(tester *testing.T) {
@@ -838,14 +763,7 @@ func TestKind(tester *testing.T) {
 		{ struct{str string}{"hello world"}, "struct" },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, kind, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("kind", passed, failed)
+	testRunArgTests(kind, tests, tester)
 }
 
 func TestLast(tester *testing.T) {
@@ -876,14 +794,7 @@ func TestLast(tester *testing.T) {
 		{ struct{ str1, str2 string } {"first", "last"}, "last" },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, last, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-	
-	formatPassFail("last", passed, failed)
+	testRunArgTests(last, tests, tester)
 }
 
 func TestLength(tester *testing.T) {
@@ -903,14 +814,7 @@ func TestLength(tester *testing.T) {
 		{ struct{str string}{"hello world"}, 1 },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, length, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("length", passed, failed)
+	testRunArgTests(length, tests, tester)
 }
 
 func TestLocaltime(tester *testing.T) {
@@ -926,7 +830,7 @@ func TestLocaltime(tester *testing.T) {
 		{ []any{testTime}, localtime("EST", testTime), testTime.In(est) },
 	}
 
-	runTests("localtime", tests, tester)
+	testRunTests("localtime", tests, tester)
 }
 
 func TestLower(tester *testing.T) {
@@ -946,14 +850,7 @@ func TestLower(tester *testing.T) {
 		{ struct{str string}{"test"}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, lower, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("lower", passed, failed)
+	testRunArgTests(lower, tests, tester)
 }
 
 func TestLtrim(tester *testing.T) {
@@ -973,14 +870,7 @@ func TestLtrim(tester *testing.T) {
 		{ " ", struct{str string}{" test "}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, ltrim, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("ltrim", passed, failed)
+	testRunArgTests(ltrim, tests, tester)
 }
 
 func TestMktime(tester *testing.T) {
@@ -994,7 +884,7 @@ func TestMktime(tester *testing.T) {
 		{ []any{"ATOM", "2019-04-23T11:30:21+01:00"}, mktime("ATOM", "2019-04-23T11:30:21+01:00"), testTime },
 	}
 
-	runTests("mktime", tests, tester)
+	testRunTests("mktime", tests, tester)
 }
 
 func TestMultiply(tester *testing.T) {
@@ -1017,14 +907,7 @@ func TestMultiply(tester *testing.T) {
 		{ 5, struct{ num1, num2 int }{10, 20}, struct{ num1, num2 int }{0, 0} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, multiply, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("multiply", passed, failed)
+	testRunArgTests(multiply, tests, tester)
 }
 
 func TestNl2br(tester *testing.T) {
@@ -1045,14 +928,7 @@ func TestNl2br(tester *testing.T) {
 		{ struct{str string}{"hello world"}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, nl2br, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("nl2br", passed, failed)
+	testRunArgTests(nl2br, tests, tester)
 }
 
 func TestNow(tester *testing.T) {
@@ -1062,30 +938,30 @@ func TestNow(tester *testing.T) {
 		{ []any{}, now(), testTime },
 	}
 
-	runTests("now", tests, tester)
+	testRunTests("now", tests, tester)
 }
 
 func TestOl(tester *testing.T) {
-	tests := []struct { inputs []any; result any; expected any } {
-		{ []any{false}, ol(reflect.ValueOf(false)), "false" },
-		{ []any{true}, ol(reflect.ValueOf(true)), "true" },
-		{ []any{0}, ol(reflect.ValueOf(0)), "0" },
-		{ []any{1}, ol(reflect.ValueOf(1)), "1" },
-		{ []any{-1}, ol(reflect.ValueOf(-1)), "-1" },
-		{ []any{1.5}, ol(reflect.ValueOf(1.5)), "1.5" },
-		{ []any{-1.5}, ol(reflect.ValueOf(-1.5)), "-1.5" },
-		{ []any{"value1"}, ol(reflect.ValueOf("value1")), "value1" },
-		{ []any{[]int{1, 2}}, ol(reflect.ValueOf([]int{1, 2})), "<ol><li>1</li><li>2</li></ol>" },
-		{ []any{[]string{"value1", "value2"}}, ol(reflect.ValueOf([]string{"value1", "value2"})), "<ol><li>value1</li><li>value2</li></ol>" },
-		{ []any{[2]int{1, 2}}, ol(reflect.ValueOf([2]int{1, 2})), "<ol><li>1</li><li>2</li></ol>" },
-		{ []any{[2]string{"value1", "value2"}}, ol(reflect.ValueOf([2]string{"value1", "value2"})), "<ol><li>value1</li><li>value2</li></ol>" },
-		{ []any{map[int]string{1: "value1", 2: "value2"}}, ol(reflect.ValueOf(map[int]string{1: "value1", 2: "value2"})), "<ol><li>value1</li><li>value2</li></ol>" },
-		{ []any{map[string]string{"title1": "value1", "title2": "value2"}}, ol(reflect.ValueOf(map[string]string{"title1": "value1", "title2": "value2"})), "<ol><li>value1</li><li>value2</li></ol>" },
-		{ []any{[][]string{{"subvalue1", "subvalue2"}, {"subvalue3", "subvalue4"}}}, ol(reflect.ValueOf([][]string{{"subvalue1", "subvalue2"}, {"subvalue3", "subvalue4"}})), "<ol><li><ol><li>subvalue1</li><li>subvalue2</li></ol></li><li><ol><li>subvalue3</li><li>subvalue4</li></ol></li></ol>" },
-		{ []any{map[string]map[string]string{"title1": {"nested1": "subvalue1", "sub2": "subvalue2"}}}, ol(reflect.ValueOf(map[string]map[string]string{"title1": {"nested1": "subvalue1", "sub2": "subvalue2"}})), "<ol><li><ol><li>subvalue1</li><li>subvalue2</li></ol></li></ol>" },
+	tests := []struct { input1, expected any } {
+		{ false, "false" },
+		{ true, "true" },
+		{ 0, "0" },
+		{ 1, "1" },
+		{ -2, "-2" },
+		{ 3.5, "3.5" },
+		{ input1: -4.6, expected: "-4.6" },
+		{ "test string", "test string" },
+		{ []int{1, 2}, "<ol><li>1</li><li>2</li></ol>" },
+		{ [2]int{1, 2}, "<ol><li>1</li><li>2</li></ol>" },
+		{ []string{"value1", "value2"}, "<ol><li>value1</li><li>value2</li></ol>" },
+		{ [2]string{"value1", "value2"}, "<ol><li>value1</li><li>value2</li></ol>" },
+		{ map[int]string{1: "value1", 2: "value2"}, "<ol><li>value1</li><li>value2</li></ol>" },
+		{ map[string]string{"title1": "value1", "title2": "value2"}, "<ol><li>value1</li><li>value2</li></ol>" },
+		{ [][]string{{"subvalue1", "subvalue2"}, {"subvalue3", "subvalue4"}}, "<ol><li><ol><li>subvalue1</li><li>subvalue2</li></ol></li><li><ol><li>subvalue3</li><li>subvalue4</li></ol></li></ol>" },
+		{ map[string]map[string]string{"title1": {"nested1": "subvalue1", "sub2": "subvalue2"}}, "<ol><li><ol><li>subvalue1</li><li>subvalue2</li></ol></li></ol>" },
 	}
 
-	runTests("ol", tests, tester)
+	testRunArgTests(ol, tests, tester)
 }
 
 func TestOrdinal(tester *testing.T) {
@@ -1124,7 +1000,7 @@ func TestOrdinal(tester *testing.T) {
 		{ []any{1023}, ordinal(reflect.ValueOf(1023)), "1023rd" },
 	}
 
-	runTests("ordinal", tests, tester)
+	testRunTests("ordinal", tests, tester)
 }
 
 func TestParagraph(tester *testing.T) {
@@ -1154,14 +1030,7 @@ func TestParagraph(tester *testing.T) {
 		{ struct{str string}{"hello world"}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, paragraph, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("paragraph", passed, failed)
+	testRunArgTests(paragraph, tests, tester)
 }
 
 func TestPluralise(tester *testing.T) {
@@ -1182,7 +1051,7 @@ func TestPluralise(tester *testing.T) {
 		{ []any{struct{ Str string }{"test"}}, pluralise(struct{ Str string }{"test"}), "" },
 	}
 
-	runTests("pluralise", tests, tester)
+	testRunTests("pluralise", tests, tester)
 }
 
 func TestPrefix(tester *testing.T) {
@@ -1203,14 +1072,7 @@ func TestPrefix(tester *testing.T) {
 		{ "prefix", struct{ str1, str2 string }{"val1", "val2"}, struct{ str1, str2 string }{"", ""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, prefix, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("prefix", passed, failed)
+	testRunArgTests(prefix, tests, tester)
 }
 
 func TestRandom(tester *testing.T) {
@@ -1236,7 +1098,7 @@ func TestRandom(tester *testing.T) {
 		} else { failed++ }
 	}
 
-	formatPassFail("random", passed, failed)
+	testFormatPassFail("random", passed, failed)
 }
 
 func TestRegexpFindAll(tester *testing.T) {
@@ -1252,14 +1114,7 @@ func TestRegexpFindAll(tester *testing.T) {
 		{ "(https?://){0,1}([^/ ?]+)([^ ?]+)*([^ ]*)", "https://www.test.com/page?var=1", [][]string{{"https://www.test.com/page?var=1", "https://", "www.test.com", "/page", "?var=1"}} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, regexpFindAll, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("regexp", passed, failed)
+	testRunArgTests(regexpFindAll, tests, tester)
 }
 
 func TestRegexpReplaceAll(tester *testing.T) {
@@ -1276,14 +1131,7 @@ func TestRegexpReplaceAll(tester *testing.T) {
 		{ "\n{2,}", "\n", struct{ str1, str2, str3 string }{"test string", "test\nstring", "test\n\nstring"}, struct{ str1, str2, str3 string }{"", "", ""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall3Args(tester, regexpReplaceAll, test.input1, test.input2, test.input3, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("regexpreplace", passed, failed)
+	testRunArgTests(regexpReplaceAll, tests, tester)
 }
 
 func TestReplaceAll(tester *testing.T) {
@@ -1299,14 +1147,7 @@ func TestReplaceAll(tester *testing.T) {
 		{ "find", "replace", struct{ str1, str2, str3 string }{"test string", "find string", "find another find string"}, struct{ str1, str2, str3 string }{"", "", ""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall3Args(tester, replaceAll, test.input1, test.input2, test.input3, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("replace", passed, failed)
+	testRunArgTests(replaceAll, tests, tester)
 }
 
 func TestRound(tester *testing.T) {
@@ -1331,14 +1172,7 @@ func TestRound(tester *testing.T) {
 		{ 2, struct{val float64}{3.14159}, struct{val float64}{0} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, round, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("round", passed, failed)
+	testRunArgTests(round, tests, tester)
 }
 
 func TestRtrim(tester *testing.T) {
@@ -1358,14 +1192,7 @@ func TestRtrim(tester *testing.T) {
 		{ " ", struct{str string}{" test "}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, rtrim, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("rtrim", passed, failed)
+	testRunArgTests(rtrim, tests, tester)
 }
 
 func TestSplit(tester *testing.T) {
@@ -1383,14 +1210,7 @@ func TestSplit(tester *testing.T) {
 		{ " ", struct{Str string}{" Test "}, nil },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, split, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("split", passed, failed)
+	testRunArgTests(split, tests, tester)
 }
 
 func TestStripTags(tester *testing.T) {
@@ -1409,14 +1229,7 @@ func TestStripTags(tester *testing.T) {
 		{ struct{str string}{"<p>hello <strong class=\"test classes\">world</p>"}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, stripTags, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("striptags", passed, failed)
+	testRunArgTests(stripTags, tests, tester)
 }
 
 func TestSubtract(tester *testing.T) {
@@ -1447,14 +1260,7 @@ func TestSubtract(tester *testing.T) {
 		{ struct{ Str string }{"remove"}, struct{ Str string }{"remove-value"}, struct{ Str string }{"remove-value"} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, subtract, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("subtract", passed, failed)
+	testRunArgTests(subtract, tests, tester)
 }
 
 func TestSuffix(tester *testing.T) {
@@ -1475,14 +1281,7 @@ func TestSuffix(tester *testing.T) {
 		{ "suffix", struct{ str1, str2 string }{"val1", "val2"}, struct{ str1, str2 string }{"", ""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, suffix, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("suffix", passed, failed)
+	testRunArgTests(suffix, tests, tester)
 }
 
 func TestTime(tester *testing.T) {
@@ -1557,7 +1356,7 @@ func TestTime(tester *testing.T) {
 		{ []any{"D d M y H:i", "ANSIC", testTimeANSIC}, timeFn("D d M y H:i", "ANSIC", testTimeANSIC), testTime.Format("Mon 02 Jan 06 15:04") },
 	}
 
-	runTests("time", tests, tester)
+	testRunTests("time", tests, tester)
 }
 
 func TestTimeSince(tester *testing.T) {
@@ -1584,7 +1383,7 @@ func TestTimeSince(tester *testing.T) {
 		} else { failed++ }
 	}
 
-	formatPassFail("timesince", passed, failed)
+	testFormatPassFail("timesince", passed, failed)
 }
 
 func TestTimeUntil(tester *testing.T) {
@@ -1611,7 +1410,7 @@ func TestTimeUntil(tester *testing.T) {
 		} else { failed++ }
 	}
 
-	formatPassFail("timeuntil", passed, failed)
+	testFormatPassFail("timeuntil", passed, failed)
 }
 
 func TestTitle(tester *testing.T) {
@@ -1631,14 +1430,7 @@ func TestTitle(tester *testing.T) {
 		{ struct{str string}{"test"}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, title, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("title", passed, failed)
+	testRunArgTests(title, tests, tester)
 }
 
 func TestTrim(tester *testing.T) {
@@ -1658,14 +1450,7 @@ func TestTrim(tester *testing.T) {
 		{ " ", struct{str string}{" test "}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, trim, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("trim", passed, failed)
+	testRunArgTests(trim, tests, tester)
 }
 
 func TestTruncate(tester *testing.T) {
@@ -1692,14 +1477,7 @@ func TestTruncate(tester *testing.T) {
 		{ 5, struct{str string}{" test "}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, truncate, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("truncate", passed, failed)
+	testRunArgTests(truncate, tests, tester)
 }
 
 func TestTruncateWords(tester *testing.T) {
@@ -1723,14 +1501,7 @@ func TestTruncateWords(tester *testing.T) {
 		{ 1, struct{str string}{"hello world"}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall2Args(tester, truncatewords, test.input1, test.input2, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("truncatewords", passed, failed)
+	testRunArgTests(truncatewords, tests, tester)
 }
 
 func TestType(tester *testing.T) {
@@ -1748,37 +1519,30 @@ func TestType(tester *testing.T) {
 		{ struct{str string}{"hello world"}, "struct { str string }" },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, typeFn, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("type", passed, failed)
+	testRunArgTests(typeFn, tests, tester)
 }
 
 func TestUl(tester *testing.T) {
-	tests := []struct { inputs []any; result any; expected any } {
-		{ []any{false}, ul(reflect.ValueOf(false)), "false" },
-		{ []any{true}, ul(reflect.ValueOf(true)), "true" },
-		{ []any{0}, ul(reflect.ValueOf(0)), "0" },
-		{ []any{1}, ul(reflect.ValueOf(1)), "1" },
-		{ []any{-1}, ul(reflect.ValueOf(-1)), "-1" },
-		{ []any{1.5}, ul(reflect.ValueOf(1.5)), "1.5" },
-		{ []any{-1.5}, ul(reflect.ValueOf(-1.5)), "-1.5" },
-		{ []any{"value1"}, ul(reflect.ValueOf("value1")), "value1" },
-		{ []any{[]int{1, 2}}, ul(reflect.ValueOf([]int{1, 2})), "<ul><li>1</li><li>2</li></ul>" },
-		{ []any{[]string{"value1", "value2"}}, ul(reflect.ValueOf([]string{"value1", "value2"})), "<ul><li>value1</li><li>value2</li></ul>" },
-		{ []any{[2]int{1, 2}}, ul(reflect.ValueOf([2]int{1, 2})), "<ul><li>1</li><li>2</li></ul>" },
-		{ []any{[2]string{"value1", "value2"}}, ul(reflect.ValueOf([2]string{"value1", "value2"})), "<ul><li>value1</li><li>value2</li></ul>" },
-		{ []any{map[int]string{1: "value1", 2: "value2"}}, ul(reflect.ValueOf(map[int]string{1: "value1", 2: "value2"})), "<ul><li>value1</li><li>value2</li></ul>" },
-		{ []any{map[string]string{"title1": "value1", "title2": "value2"}}, ul(reflect.ValueOf(map[string]string{"title1": "value1", "title2": "value2"})), "<ul><li>value1</li><li>value2</li></ul>" },
-		{ []any{[][]string{{"subvalue1", "subvalue2"}, {"subvalue3", "subvalue4"}}}, ul(reflect.ValueOf([][]string{{"subvalue1", "subvalue2"}, {"subvalue3", "subvalue4"}})), "<ul><li><ul><li>subvalue1</li><li>subvalue2</li></ul></li><li><ul><li>subvalue3</li><li>subvalue4</li></ul></li></ul>" },
-		{ []any{map[string]map[string]string{"title1": {"nested1": "subvalue1", "sub2": "subvalue2"}}}, ul(reflect.ValueOf(map[string]map[string]string{"title1": {"nested1": "subvalue1", "sub2": "subvalue2"}})), "<ul><li><ul><li>subvalue1</li><li>subvalue2</li></ul></li></ul>" },
+	tests := []struct { input1, expected any } {
+		{ false, "false" },
+		{ true, "true" },
+		{ 0, "0" },
+		{ 1, "1" },
+		{ -2, "-2" },
+		{ 3.5, "3.5" },
+		{ input1: -4.6, expected: "-4.6" },
+		{ "test string", "test string" },
+		{ []int{1, 2}, "<ul><li>1</li><li>2</li></ul>" },
+		{ [2]int{1, 2}, "<ul><li>1</li><li>2</li></ul>" },
+		{ []string{"value1", "value2"}, "<ul><li>value1</li><li>value2</li></ul>" },
+		{ [2]string{"value1", "value2"}, "<ul><li>value1</li><li>value2</li></ul>" },
+		{ map[int]string{1: "value1", 2: "value2"}, "<ul><li>value1</li><li>value2</li></ul>" },
+		{ map[string]string{"title1": "value1", "title2": "value2"}, "<ul><li>value1</li><li>value2</li></ul>" },
+		{ [][]string{{"subvalue1", "subvalue2"}, {"subvalue3", "subvalue4"}}, "<ul><li><ul><li>subvalue1</li><li>subvalue2</li></ul></li><li><ul><li>subvalue3</li><li>subvalue4</li></ul></li></ul>" },
+		{ map[string]map[string]string{"title1": {"nested1": "subvalue1", "sub2": "subvalue2"}}, "<ul><li><ul><li>subvalue1</li><li>subvalue2</li></ul></li></ul>" },
 	}
 
-	runTests("ul", tests, tester)
+	testRunArgTests(ul, tests, tester)
 }
 
 func TestUpper(tester *testing.T) {
@@ -1798,14 +1562,7 @@ func TestUpper(tester *testing.T) {
 		{ struct{str string}{"test"}, struct{str string}{""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, upper, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("upper", passed, failed)
+	testRunArgTests(upper, tests, tester)
 }
 
 func TestUrlDecode(tester *testing.T) {
@@ -1828,14 +1585,7 @@ func TestUrlDecode(tester *testing.T) {
 		{ struct{ string1, string2 string }{"string without entities", " %21 %2A %27 %28 %29 %3B %3A %40 %26 %3D %2B %24 %2C %2F %3F %25 %23 %5B %5D "}, struct{ string1, string2 string }{"", ""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, urlDecode, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("urldecode", passed, failed)
+	testRunArgTests(urlDecode, tests, tester)
 }
 
 func TestUrlEncode(tester *testing.T) {
@@ -1858,35 +1608,29 @@ func TestUrlEncode(tester *testing.T) {
 		{ struct{ string1, string2 string }{"string without entities", " ! * ' ( ) ; : @ & = + $ , / ? % # [ ] "}, struct{ string1, string2 string }{"", ""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall1Arg(tester, urlEncode, test.input1, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("urlencode", passed, failed)
+	testRunArgTests(urlEncode, tests, tester)
 }
 
 func TestWordcount(tester *testing.T) {
-	tests := []struct { inputs []any; result any; expected any } {
-		{ []any{false}, wordcount(reflect.ValueOf(false)), 0 },
-		{ []any{true}, wordcount(reflect.ValueOf(true)), 0 },
-		{ []any{0}, wordcount(reflect.ValueOf(0)), 0 },
-		{ []any{10}, wordcount(reflect.ValueOf(10)), 0 },
-		{ []any{-10}, wordcount(reflect.ValueOf(-10)), 0 },
-		{ []any{10.1}, wordcount(reflect.ValueOf(10.1)), 0 },
-		{ []any{-10.1}, wordcount(reflect.ValueOf(-10.1)), 0 },
-		{ []any{"hello world"}, wordcount(reflect.ValueOf("hello world")), 2 },
-		{ []any{" 12 \" complex ' string ' world,together"}, wordcount(reflect.ValueOf(" 12 \" complex ' string ' world,together")), 4 },
-		{ []any{"<span>simple<span> test"}, wordcount(reflect.ValueOf("<span>simple<span> test")), 2 },
-		{ []any{[]string{"hello world"}}, wordcount(reflect.ValueOf([]string{"hello world"})), 0 },
-		{ []any{map[int]string{1: "hello world"}}, wordcount(reflect.ValueOf(map[int]string{1: "hello world"})), 0 },
-		{ []any{struct{ String1 string }{"hello world"}}, wordcount(reflect.ValueOf(struct{ String1 string }{"hello world"})), 0 },
-		{ []any{struct{ string1 string }{"hello world"}}, wordcount(reflect.ValueOf(struct{ string1 string }{"hello world"})), 0 },
+	tests := []struct { input1, expected any } {
+		{ false, 0 },
+		{ true, 0 },
+		{ true, 0 },
+		{ 0, 0 },
+		{ 10, 0 },
+		{ -10, 0 },
+		{ 10.1, 0 },
+		{ -10.1, 0 },
+		{ "hello world", 2 },
+		{ " 12 \" complex ' string ' world,together", 4 }, 
+		{ "<span>simple<span> test", 2 }, 
+		{ []string{"hello world"}, 0 },
+		{ map[int]string{1: "hello world"}, 0 },
+		{ struct{ String1 string }{"hello world"}, 0 },
+		{ struct{ string1 string }{"hello world"}, 0 },
 	}
 
-	runTests("wordcount", tests, tester)
+	testRunArgTests(wordcount, tests, tester)
 }
 
 func TestWrap(tester *testing.T) {
@@ -1907,14 +1651,7 @@ func TestWrap(tester *testing.T) {
 		{ "prefix", "suffix", struct{ str1, str2 string }{"val1", "val2"}, struct{ str1, str2 string }{"", ""} },
 	}
 
-	passed, failed := 0, 0
-	for _, test := range tests {
-		if reflectCall3Args(tester, wrap, test.input1, test.input2, test.input3, test.expected) {
-			passed++
-		} else { failed++ }
-	}
-
-	formatPassFail("wrap", passed, failed)
+	testRunArgTests(wrap, tests, tester)
 }
 
 func TestYear(tester *testing.T) {
@@ -1930,7 +1667,7 @@ func TestYear(tester *testing.T) {
 		{ []any{testTime}, year(testTime), testYear },
 	}
 
-	runTests("year", tests, tester)
+	testRunTests("year", tests, tester)
 }
 
 func TestYesNo(tester *testing.T) {
@@ -2052,125 +1789,25 @@ func TestYesNo(tester *testing.T) {
 
 	passed, failed := 0, 0
 	for _, test := range tests1 {
-		if reflectCallVarArgs(tester, yesno, []any{test.input1}, test.expected) {
+		if testCallVarArgs(tester, yesno, []any{test.input1}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
-
 	for _, test := range tests2 {
-		if reflectCallVarArgs(tester, yesno, []any{test.input1, test.input2}, test.expected) {
+		if testCallVarArgs(tester, yesno, []any{test.input1, test.input2}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
-
 	for _, test := range tests3 {
-		if reflectCallVarArgs(tester, yesno, []any{test.input1, test.input2, test.input3}, test.expected) {
+		if testCallVarArgs(tester, yesno, []any{test.input1, test.input2, test.input3}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
-
 	for _, test := range tests4 {
-		if reflectCallVarArgs(tester, yesno, []any{test.input1, test.input2, test.input3, test.input4}, test.expected) {
+		if testCallVarArgs(tester, yesno, []any{test.input1, test.input2, test.input3, test.input4}, test.expected) {
 			passed++
 		} else { failed++ }
 	}
 	
-	formatPassFail("yesno", passed, failed)
-}
-
-// HELPERS ------------------------------------------------------------------
-
-func runTests(name string, tests []struct { inputs []any; result any; expected any }, tester *testing.T) {
-	passed, failed := 0, 0
-	for _, test := range tests {
-		arguments := ""
-		for i, input := range test.inputs {
-			if i > 0 { arguments += ", " }
-			arguments += fmt.Sprintf("\033[33m%#v\033[0m", input)
-		}
-
-		if !reflect.DeepEqual(test.result, test.expected) {
-			tester.Errorf("\033[31mFAIL: \033[36m%s(%s\033[36m)\033[0m:\n\t\033[31mProduced: \033[33m%#v \033[36m%T\033[0m\n\t\033[31mExpected: \033[33m%#v \033[36m%T\033[0m", name, arguments, test.result, test.result, test.expected, test.expected)
-			failed++
-		} else {
-			if testsShowSuccessful {
-				fmt.Printf("\t\033[32mPASSED: \033[36m%s(%s\033[36m)\033[0m:\n\t\tProduced: \033[33m%#v \033[36m%T\033[0m\n", name, arguments, test.result, test.result)
-			}
-			passed++
-		}
-	}
-
-	formatPassFail(name, passed, failed)
-}
-
-func formatPassFail(name string, passed int, failed int) {
-	if testsShowDetails {
-		title := fmt.Sprintf("Running %s() Tests:", name)
-		fmt.Printf("\033[36m%-30s\033[0m ", title)
-		if failed == 0 {
-			fmt.Printf("\033[32mPASSED: %d/%d\033[0m\n", passed, passed + failed)
-			return
-		}
-		fmt.Printf("\033[33mPASSED: %d, \033[31mFAILED: %d\033[0m\n", passed, failed)
-	}
-}
-
-func reflectCallVarArgs[T reflect.Value|any](tester *testing.T, fn func(...reflect.Value) T, values []any, expected any) bool {
-	tmp := []reflect.Value{}
-	arguments := "("
-	for i, v := range values {
-		tmp = append(tmp, reflect.ValueOf(v))
-		if i > 0 { arguments += ", " }
-		arguments += fmt.Sprintf("\033[33m%#v\033[36m", v)
-	}
-	arguments += ")"
-	result := fn(tmp...)
-	return testDeepEqual(tester, arguments, result, expected, reflect.ValueOf(fn))
-}
-
-func reflectCall1Arg[T reflect.Value|any](tester *testing.T, fn func(reflect.Value) T, value1 any, expected any) bool {
-	result := fn(reflect.ValueOf(value1))
-	arguments := fmt.Sprintf("(\033[33m%#v\033[36m)", value1)
-	return testDeepEqual(tester, arguments, result, expected, reflect.ValueOf(fn))
-}
-
-func reflectCall2Args[T reflect.Value|any](tester *testing.T, fn func(reflect.Value, reflect.Value) T, value1 any, value2 any, expected any) bool {
-	result := fn(reflect.ValueOf(value1), reflect.ValueOf(value2))
-	arguments := fmt.Sprintf("(\033[33m%#v\033[0m, \033[33m%#v\033[36m)", value1, value2)
-	return testDeepEqual(tester, arguments, result, expected, reflect.ValueOf(fn))
-}
-
-func reflectCall3Args[T reflect.Value|any](tester *testing.T, fn func(reflect.Value, reflect.Value, reflect.Value) T, value1 any, value2 any, value3 any, expected any) bool {
-	result := fn(reflect.ValueOf(value1), reflect.ValueOf(value2), reflect.ValueOf(value3))
-	arguments := fmt.Sprintf("(\033[33m%#v\033[0m, \033[33m%#v\033[0m, \033[33m%#v\033[36m)", value1, value2, value3)
-	return testDeepEqual(tester, arguments, result, expected, reflect.ValueOf(fn))
-}
-
-func testDeepEqual[T reflect.Value|any](tester *testing.T, arguments string, result T, expected any, fn reflect.Value) bool {
-	test := any(result)
-	switch v := test.(type) {
-		case reflect.Value:
-			if v.IsValid() {
-				test = v.Interface()
-			} else {
-				test = nil
-			}
-		default: test = v
-	}
-	
-	if !reflect.DeepEqual(test, expected) {
-		name := runtime.FuncForPC(fn.Pointer()).Name()
-		name = strings.Replace(name, "github.com/paul-norman/go-template-manager.", "", 1)
-		tester.Errorf("\033[31mFAIL: \033[36m%s%s:\n\t\033[31mProduced: \033[33m%#v \033[36m%T\033[0m\n\t\033[31mExpected: \033[33m%#v \033[36m%T\033[0m", name, arguments,  test, test, expected, expected)
-
-		return false
-	} else {
-		if testsShowSuccessful {
-			name := runtime.FuncForPC(fn.Pointer()).Name()
-			name = strings.Replace(name, "github.com/paul-norman/go-template-manager.", "", 1)
-			fmt.Printf("\t\033[32mPASSED: \033[36m%s(%s\033[36m)\033[0m:\n\t\tProduced: \033[33m%#v \033[36m%T\033[0m\n", name, arguments, test, test)
-		}
-	}
-
-	return true
+	testFormatPassFail("yesno", passed, failed)
 }
