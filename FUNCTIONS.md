@@ -2,7 +2,7 @@
 
 All functions in `templateManager` accept their principle argument **last** to allow simple chaining. *Efforts have been made to output clear errors and return suitable empty values rather than cause panics (a problem in several `text/template` functions)*.
 
-Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divisibleby`](#divisibleby), [`dl`](#dl), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`split`](#split), [`striptags`](#striptags), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
+Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divisibleby`](#divisibleby), [`dl`](#dl), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`gto`](#gto-greater-than), [`gte`](#gte-greater-than-equal), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`lto`](#lto-less-than), [`lte`](#lte-less-than-equal), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`split`](#split), [`striptags`](#striptags), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
 
 ## `add`
 
@@ -421,6 +421,8 @@ Tests whether any number of variables are equal. A safer alternative *(no panics
 {{ equal .Test1 .Test2 }} <!-- true -->
 ```
 
+*(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`eq`](BASICS.md#eq) function)*
+
 ## `first`
 
 ```go
@@ -463,6 +465,44 @@ Formats a time.Time object for display.
 
 Date and time functions support various pre-defined formats for simplicity, see [`date`](#date).
 
+## `gto` (greater than)
+
+```go
+func gto(value1 any, value2 any) bool
+```
+
+Determines if `value2` is greater than `value1` with loose numeric types. Only works on numeric types, anything else will return false. **Arguments are reversed for pipelining.**
+
+```django
+{{ 2.4 | gto 2 }} <!-- true -->
+{{ 2.4 | gto 2.4 }} <!-- false -->
+
+<!-- Opposite to normal variable order for pipelining -->
+{{ gto 2 2.4 }} <!-- true -->
+{{ gto 2.4 2 }} <!-- false -->
+```
+
+*(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`gt`](BASICS.md#gt) function)*
+
+## `gte` (greater than equal)
+
+```go
+func gte(value1 any, value2 any) bool
+```
+
+Determines if `value2` is greater than or equal to `value1` with loose numeric types. Only works on numeric types, anything else will return false. **Arguments are reversed for pipelining.**
+
+```django
+{{ 2.4 | gte 2 }} <!-- true -->
+{{ 2.4 | gte 2.4 }} <!-- true -->
+
+<!-- Opposite to normal variable order for pipelining -->
+{{ gte 2 2.4 }} <!-- true -->
+{{ gte 2.4 2 }} <!-- false -->
+```
+
+*(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`ge`](BASICS.md#ge) function)*
+
 ## `htmldecode`
 
 ```go
@@ -492,6 +532,8 @@ Returns new variable of the original `value` data type.
 {{ htmlencode `"string" <strong>with</strong> 'html entities' &amp; other "nasty" stuff` }}
 <!-- &#34;string&#34; &lt;strong&gt;with&lt;/strong&gt; &#39;html entities&#39; &amp;amp; other &#34;nasty&#34; stuff -->
 ```
+
+*(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`html`](BASICS.md#html) function)*
 
 ## `join`
 
@@ -556,6 +598,8 @@ Very similar to the in-built `text/template` [`index`](BASICS.md#general-utility
 {{ key "first" "nested" 3 .Test }} <!-- t -->
 ```
 
+*(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`index`](BASICS.md#index) function)*
+
 ## `kind`
 
 ```go
@@ -613,6 +657,48 @@ Gets length of any type. Unlike the `text/template` function: `len`, the `length
 <!-- .Test is [1:"first", 2:"second"] -->
 {{ length .Test }} <!-- 2 -->
 ```
+
+*(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`len`](BASICS.md#len) function)*
+
+## `lto` (less than)
+
+```go
+func lto(value1 any, value2 any) bool
+```
+
+Determines if `value2` is less than `value1` with loose numeric types. Only works on numeric types, anything else will return false. **Arguments are reversed for pipelining.**
+
+```django
+{{ 2.4 | lto 3 }} <!-- true -->
+{{ 2.4 | lto 2 }} <!-- false -->
+{{ 2.4 | lto 2.4 }} <!-- false -->
+
+<!-- Opposite to normal variable order for pipelining -->
+{{ lto 2 2.4 }} <!-- false -->
+{{ lto 2.4 2 }} <!-- true -->
+```
+
+*(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`lt`](BASICS.md#lt) function)*
+
+## `lte` (less than equal)
+
+```go
+func lte(value1 any, value2 any) bool
+```
+
+Determines if `value2` is less than or equal to `value1` with loose numeric types. Only works on numeric types, anything else will return false. **Arguments are reversed for pipelining.**
+
+```django
+{{ 2.4 | lte 3 }} <!-- true -->
+{{ 2.4 | lte 2 }} <!-- false -->
+{{ 2.4 | lte 2.4 }} <!-- true -->
+
+<!-- Opposite to normal variable order for pipelining -->
+{{ lte 2 2.4 }} <!-- false -->
+{{ lte 2.4 2 }} <!-- true -->
+```
+
+*(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`le`](BASICS.md#le) function)*
 
 ## `localtime`
 
@@ -768,6 +854,8 @@ Tests whether any number of variables are not equal. A safer alternative *(no pa
 <!-- .Test1 and .Test2 are both [1, 2, 3] -->
 {{ notequal .Test1 .Test2 }} <!-- false -->
 ```
+
+*(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`ne`](BASICS.md#ne) function)*
 
 ## `now`
 
@@ -1384,6 +1472,8 @@ Returns new variable of the original `value` data type.
 {{ urlencode "! * ' ( ) ; : @ & = + $ , / ? % # [ ]" }}
 <!-- %21 %2A %27 %28 %29 %3B %3A %40 %26 %3D %2B %24 %2C %2F %3F %25 %23 %5B %5D -->
 ```
+
+*(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`urlquery`](BASICS.md#urlquery) function)*
 
 ## `wordcount`
 

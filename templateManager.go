@@ -240,29 +240,9 @@ func (tm *TemplateManager) ExcludeDirectory(directory string) *TemplateManager {
 	return tm
 }
 
-// Enable re-rebuilding of the template bundle upon every page load (for development)
-func (tm *TemplateManager) Reload(reload bool) *TemplateManager {
-	tm.reload = reload
-
-	return tm
-}
-
-// Removes a directory that was previously excluded to allow it to feature in the build scanning process (which only wants entry files).
-func (tm *TemplateManager) RemoveExcludedDirectory(directory string) *TemplateManager {
-	if slices.Contains(tm.excludedDirectories, directory) {
-		index := slices.Index(tm.excludedDirectories, directory)
-		tm.excludedDirectories = append(tm.excludedDirectories[:index], tm.excludedDirectories[index + 1:]...)
-	}
-
-	return tm
-}
-
-// Removes all functions currently assigned to the instance of `TemplateManager`.
-// Useful if you do not want the default functions included
-func (tm *TemplateManager) RemoveAllFunctions() *TemplateManager {
-	tm.mutex.Lock()
-	tm.functions = make(map[string]any)
-	tm.mutex.Unlock()
+// Replaces standard `text/template` functions with the `TemplateManager` alternatives
+func (tm *TemplateManager) OverloadFunctions() *TemplateManager {
+	tm.AddFunctions(getOverloadFunctions())
 
 	return tm
 }
@@ -327,6 +307,65 @@ func (tm *TemplateManager) Parse() error {
 	}
 
 	return err
+}
+
+// Enable re-rebuilding of the template bundle upon every page load (for development)
+func (tm *TemplateManager) Reload(reload bool) *TemplateManager {
+	tm.reload = reload
+
+	return tm
+}
+
+// Removes all functions currently assigned to the instance of `TemplateManager`.
+// Useful if you do not want the default functions included
+func (tm *TemplateManager) RemoveAllFunctions() *TemplateManager {
+	tm.mutex.Lock()
+	tm.functions = make(map[string]any)
+	tm.mutex.Unlock()
+
+	return tm
+}
+
+// Removes a directory that was previously excluded to allow it to feature in the build scanning process (which only wants entry files).
+func (tm *TemplateManager) RemoveExcludedDirectory(directory string) *TemplateManager {
+	if slices.Contains(tm.excludedDirectories, directory) {
+		index := slices.Index(tm.excludedDirectories, directory)
+		tm.excludedDirectories = append(tm.excludedDirectories[:index], tm.excludedDirectories[index + 1:]...)
+	}
+
+	return tm
+}
+
+// Removes the function named (does not affect built-in `template/text` functions)
+func (tm *TemplateManager) RemoveFunction(name string) *TemplateManager {
+	tm.mutex.Lock()
+	delete(tm.functions, name)
+	tm.mutex.Unlock()
+
+	return tm
+}
+
+// Removes the functions named (does not affect built-in `template/text` functions)
+func (tm *TemplateManager) RemoveFunctions(names []string) *TemplateManager {
+	tm.mutex.Lock()
+	for _, name := range names {
+		delete(tm.functions, name)
+	}
+	tm.mutex.Unlock()
+
+	return tm
+}
+
+// Replaces standard `text/template` functions with the `TemplateManager` alternatives
+func (tm *TemplateManager) RemoveOverloadFunctions() *TemplateManager {
+	names := getOverloadFunctions()
+	tm.mutex.Lock()
+	for name, _ := range names {
+		delete(tm.functions, name)
+	}
+	tm.mutex.Unlock()
+
+	return tm
 }
 
 // Executes a single template (`name`)

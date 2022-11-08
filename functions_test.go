@@ -506,6 +506,58 @@ func TestFormatTime(tester *testing.T) {
 	testRunTests("formattime", tests, tester)
 }
 
+func TestGreaterThan(tester *testing.T) {
+	tests := []struct { input1, input2, expected any } {
+		{ false, true, false},
+		{ false, 5, false},
+		{ 5, true, false},
+		{ 5, 5, false},
+		{ 10, 5, false},
+		{ 5, 10, true},
+		{ 5.0, 5, false},
+		{ 10.0, 5, false},
+		{ 5, 10.0, true},
+		{ 5.1, 5.1, false},
+		{ 10.1, 5.1, false},
+		{ 5.1, 10.1, true},
+		{ "test", 10, false},
+		{ 10, "test", false},
+		{ "test1", "test2", false},
+		{ []int{10}, 5, false},
+		{ []int{5}, 10, false},
+		{ 5, []int{10}, false},
+		{ 10, []int{5}, false},
+	}
+
+	testRunArgTests(greaterThan, tests, tester)
+}
+
+func TestGreaterThanEqual(tester *testing.T) {
+	tests := []struct { input1, input2, expected any } {
+		{ false, true, false},
+		{ false, 5, false},
+		{ 5, true, false},
+		{ 5, 5, true},
+		{ 10, 5, false},
+		{ 5, 10, true},
+		{ 5.0, 5, true},
+		{ 10.0, 5, false},
+		{ 5, 10.0, true},
+		{ 5.1, 5.1, true},
+		{ 10.1, 5.1, false},
+		{ 5.1, 10.1, true},
+		{ "test", 10, false},
+		{ 10, "test", false},
+		{ "test1", "test2", false},
+		{ []int{10}, 5, false},
+		{ []int{5}, 10, false},
+		{ 5, []int{10}, false},
+		{ 10, []int{5}, false},
+	}
+
+	testRunArgTests(greaterThanEqual, tests, tester)
+}
+
 func TestHtmlDecode(tester *testing.T) {
 	tests := []struct { input1, expected any } {
 		{ false, false },
@@ -815,6 +867,58 @@ func TestLength(tester *testing.T) {
 	}
 
 	testRunArgTests(length, tests, tester)
+}
+
+func TestLessThan(tester *testing.T) {
+	tests := []struct { input1, input2, expected any } {
+		{ false, true, false},
+		{ false, 5, false},
+		{ 5, true, false},
+		{ 5, 5, false},
+		{ 10, 5, true},
+		{ 5, 10, false},
+		{ 5.0, 5, false},
+		{ 10.0, 5, true},
+		{ 5, 10.0, false},
+		{ 5.1, 5.1, false},
+		{ 10.1, 5.1, true},
+		{ 5.1, 10.1, false},
+		{ "test", 10, false},
+		{ 10, "test", false},
+		{ "test1", "test2", false},
+		{ []int{10}, 5, false},
+		{ []int{5}, 10, false},
+		{ 5, []int{10}, false},
+		{ 10, []int{5}, false},
+	}
+
+	testRunArgTests(lessThan, tests, tester)
+}
+
+func TestLessThanEqual(tester *testing.T) {
+	tests := []struct { input1, input2, expected any } {
+		{ false, true, false},
+		{ false, 5, false},
+		{ 5, true, false},
+		{ 5, 5, true},
+		{ 10, 5, true},
+		{ 5, 10, false},
+		{ 5.0, 5, true},
+		{ 10.0, 5, true},
+		{ 5, 10.0, false},
+		{ 5.1, 5.1, true},
+		{ 10.1, 5.1, true},
+		{ 5.1, 10.1, false},
+		{ "test", 10, false},
+		{ 10, "test", false},
+		{ "test1", "test2", false},
+		{ []int{10}, 5, false},
+		{ []int{5}, 10, false},
+		{ 5, []int{10}, false},
+		{ 10, []int{5}, false},
+	}
+
+	testRunArgTests(lessThanEqual, tests, tester)
 }
 
 func TestLocaltime(tester *testing.T) {

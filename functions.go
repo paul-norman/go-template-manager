@@ -34,6 +34,8 @@ func getDefaultFunctions() map[string]any {
 		"first":			first,
 		"firstof":			firstOf,
 		"formattime":		formattime,
+		"gto":				greaterThan,
+		"gte":				greaterThanEqual,
 		"htmldecode":		htmlDecode,
 		"htmlencode":		htmlEncode,
 		"join":				join,
@@ -43,6 +45,8 @@ func getDefaultFunctions() map[string]any {
 		"kind":				kind,
 		"last":				last,
 		"length":			length,
+		"lto":				lessThan,
+		"lte":				lessThanEqual,
 		"localtime":		localtime,
 		"lower":			lower,
 		"ltrim":			ltrim,
@@ -82,6 +86,25 @@ func getDefaultFunctions() map[string]any {
 		"wrap":				wrap,
 		"year":				year,
 		"yesno":			yesno,
+	}
+}
+
+/*
+Returns a function map for use with the Go template standard library that will replace many of their functions 
+with more consistent, fault tolerant and chainable alternatives
+*/
+func getOverloadFunctions() map[string]any {
+	return map[string]any{
+		"eq":				equal,
+		"gt":				greaterThan,
+		"ge":				greaterThanEqual,
+		"len":				length,
+		"index":			keyFn,
+		"lt":				lessThan,
+		"le":				lessThanEqual, 
+		"ne":				notequal,
+		"html":				htmlEncode,
+		"urlquery":			urlEncode,
 	}
 }
 
@@ -643,6 +666,86 @@ func formattime(format string, t time.Time) string {
 }
 
 /*
+ func greaterthan(value1 any, value2 any) bool
+Determines if `value2` is greater than `value1`
+*/
+func greaterThan(value1 reflect.Value, value2 reflect.Value) bool {
+	sig := "greaterthan(value any, value any)"
+	
+	value1 = reflectHelperUnpackInterface(value1)
+	if !value1.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		return false
+	}
+
+	value2 = reflectHelperUnpackInterface(value2)
+	if !value2.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		return false
+	}
+
+	err := reflectHelperVeryLooseTypeCompatibility(value1, value2)
+	if err != nil {
+		return false
+	}
+
+	switch value1.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+			val1, _ := reflectHelperConvertToFloat64(value1)
+			val2, _ := reflectHelperConvertToFloat64(value2)
+
+			if val2 > val1 {
+				return true
+			}
+		default:
+			logWarning(sig + fmt.Sprintf(" values cannot be type %T", value1))
+			return false
+	}
+
+	return false
+}
+
+/*
+ func greaterthanequal(value1 any, value2 any) bool
+Determines if `value2` is greater than or equal to `value1`
+*/
+func greaterThanEqual(value1 reflect.Value, value2 reflect.Value) bool {
+	sig := "greaterthanequal(value any, value any)"
+	
+	value1 = reflectHelperUnpackInterface(value1)
+	if !value1.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		return false
+	}
+
+	value2 = reflectHelperUnpackInterface(value2)
+	if !value2.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		return false
+	}
+
+	err := reflectHelperVeryLooseTypeCompatibility(value1, value2)
+	if err != nil {
+		return false
+	}
+
+	switch value1.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+			val1, _ := reflectHelperConvertToFloat64(value1)
+			val2, _ := reflectHelperConvertToFloat64(value2)
+
+			if val2 >= val1 || equalFloats(val1, val2) {
+				return true
+			}
+		default:
+			logWarning(sig + fmt.Sprintf(" values cannot be type %T", value1))
+			return false
+	}
+
+	return false
+}
+
+/*
  func htmlDecode[T any](value T) T
 Converts HTML character-entity equivalents back into their literal, usable forms.
 If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
@@ -916,6 +1019,86 @@ func length(value reflect.Value) int {
 	}
 
 	return 0
+}
+
+/*
+ func lessthan(value1 any, value2 any) bool
+Determines if `value2` is less than `value1`
+*/
+func lessThan(value1 reflect.Value, value2 reflect.Value) bool {
+	sig := "lessthan(value any, value any)"
+	
+	value1 = reflectHelperUnpackInterface(value1)
+	if !value1.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		return false
+	}
+
+	value2 = reflectHelperUnpackInterface(value2)
+	if !value2.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		return false
+	}
+
+	err := reflectHelperVeryLooseTypeCompatibility(value1, value2)
+	if err != nil {
+		return false
+	}
+
+	switch value1.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+			val1, _ := reflectHelperConvertToFloat64(value1)
+			val2, _ := reflectHelperConvertToFloat64(value2)
+
+			if val2 < val1 {
+				return true
+			}
+		default:
+			logWarning(sig + fmt.Sprintf(" values cannot be type %T", value1))
+			return false
+	}
+
+	return false
+}
+
+/*
+ func lessthanequal(value1 any, value2 any) bool
+Determines if `value2` is less than or equal to `value1`
+*/
+func lessThanEqual(value1 reflect.Value, value2 reflect.Value) bool {
+	sig := "lessthanequal(value any, value any)"
+	
+	value1 = reflectHelperUnpackInterface(value1)
+	if !value1.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		return false
+	}
+
+	value2 = reflectHelperUnpackInterface(value2)
+	if !value2.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		return false
+	}
+
+	err := reflectHelperVeryLooseTypeCompatibility(value1, value2)
+	if err != nil {
+		return false
+	}
+
+	switch value1.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+			val1, _ := reflectHelperConvertToFloat64(value1)
+			val2, _ := reflectHelperConvertToFloat64(value2)
+
+			if val2 < val1 || equalFloats(val1, val2) {
+				return true
+			}
+		default:
+			logWarning(sig + fmt.Sprintf(" values cannot be type %T", value1))
+			return false
+	}
+
+	return false
 }
 
 /*
