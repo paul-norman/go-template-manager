@@ -586,7 +586,7 @@ func reflectHelperConvertToString(value reflect.Value) (string, error) {
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 			stringValue = strconv.Itoa(int(value.Uint()))
 		case reflect.Float32, reflect.Float64:
-			stringValue = fmt.Sprintf("%.2f", value.Float())
+			stringValue = fmt.Sprintf("%f", value.Float())
 		case reflect.Bool:
 			stringValue = fmt.Sprintf("%v", value.Bool())
 		case reflect.String:

@@ -23,6 +23,7 @@ templateManager also comes with a small set of extra convenience functions which
 package templateManager
 
 import (
+	"bytes"
 	"embed"
 	"fmt"
 	"io"
@@ -33,30 +34,34 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"strconv"
 	"sync"
 	"text/template"
 
 	"golang.org/x/exp/slices"
+	"github.com/google/uuid"
 
 	"github.com/paul-norman/go-template-manager/fsWalk"
 )
 
 // Holds all templates and variables along with all required settings
 type TemplateManager struct {
-	templates 			map[string]*template.Template
-	params				map[string]map[string]any
-	descendants			map[string][]string
-	delimiterLeft		string
-	delimiterRight		string
-	fileSystem			http.FileSystem
-	directory			string
-	extension			string
-	excludedDirectories	[]string
-	functions			map[string]any
-	mutex				sync.RWMutex
-	debug				bool
-	reload				bool
-	parsed				bool
+	templates 				map[string]*template.Template
+	params					map[string]map[string]any
+	descendants				map[string][]string
+	componentDirectories	[]string
+	components				map[string]string
+	delimiterLeft			string
+	delimiterRight			string
+	fileSystem				http.FileSystem
+	directory				string
+	extension				string
+	excludedDirectories		[]string
+	functions				map[string]any
+	mutex					sync.RWMutex
+	debug					bool
+	reload					bool
+	parsed					bool
 }
 
 // Convenience type allowing any variables types to be passed in
@@ -68,11 +73,13 @@ func Init(directory string, extension string) *TemplateManager {
 		templates:				make(map[string]*template.Template),
 		params:					make(map[string]map[string]any),
 		descendants:			make(map[string][]string),
+		componentDirectories:	[]string{"components"},
+		components:				make(map[string]string),
 		delimiterLeft:			"{{",
 		delimiterRight:			"}}",
 		directory:				directory,
 		extension:				extension,
-		excludedDirectories:	[]string{"layouts", "partials"},
+		excludedDirectories:	[]string{"layouts", "partials", "components"},
 		functions:				make(map[string]any),
 		debug:					false,
 		reload:					false,
@@ -89,6 +96,8 @@ func InitEmbed(fileSystem embed.FS, directory string, extension string) *Templat
 		templates:				make(map[string]*template.Template),
 		params:					make(map[string]map[string]any),
 		descendants:			make(map[string][]string),
+		componentDirectories:	[]string{"components"},
+		components:				make(map[string]string),
 		delimiterLeft:			"{{",
 		delimiterRight:			"}}",
 		directory:				"/" + strings.TrimLeft(directory, " /"),
@@ -180,6 +189,28 @@ func (tm *TemplateManager) AddFunctions(functions map[string]any) *TemplateManag
 	return tm
 }
 
+// Adds multiple directories that contain components.
+// (Must be within the templates directory)
+func (tm *TemplateManager) AddComponentDirectories(directories []string) *TemplateManager {
+	for _, directory := range directories {
+		tm.AddComponentDirectory(directory)
+	}
+
+	return tm
+}
+
+// Adds a directory that contains components.
+// (Must be within the templates directory)
+func (tm *TemplateManager) AddComponentDirectory(directory string) *TemplateManager {
+	if !slices.Contains(tm.componentDirectories, directory) {
+		tm.mutex.Lock()
+		tm.componentDirectories = append(tm.componentDirectories, directory)
+		tm.mutex.Unlock()
+	}
+
+	return tm
+}
+
 // Adds a single variable (`name`) with value `value` that will always be available in the `templateName` template
 func (tm *TemplateManager) AddParam(templateName string, name string, value any) *TemplateManager {
 	if _, ok := tm.params[templateName]; !ok {
@@ -234,7 +265,9 @@ func (tm *TemplateManager) ExcludeDirectories(directories []string) *TemplateMan
 // Typically, directories containing base layouts and partials should be excluded.
 func (tm *TemplateManager) ExcludeDirectory(directory string) *TemplateManager {
 	if !slices.Contains(tm.excludedDirectories, directory) {
+		tm.mutex.Lock()
 		tm.excludedDirectories = append(tm.excludedDirectories, directory)
+		tm.mutex.Unlock()
 	}
 
 	return tm
@@ -255,6 +288,12 @@ func (tm *TemplateManager) Parse() error {
 	if tm.parsed {
 		return nil
 	}
+
+	if tm.debug {
+		logWarning("Parsing all components...")
+	}
+
+	tm.parseComponents()
 
 	if tm.debug {
 		logWarning("Parsing all templates...")
@@ -326,6 +365,31 @@ func (tm *TemplateManager) RemoveAllFunctions() *TemplateManager {
 	return tm
 }
 
+// Removes multiple directories that contain components from component parsing.
+func (tm *TemplateManager) RemoveComponentDirectories(directories []string) *TemplateManager {
+	for _, directory := range directories {
+		tm.RemoveComponentDirectory(directory)
+	}
+
+	return tm
+}
+
+// Removes a directory that contains components from component parsing.
+func (tm *TemplateManager) RemoveComponentDirectory(directory string) *TemplateManager {
+	if slices.Contains(tm.componentDirectories, directory) {
+		tm.mutex.Lock()
+		for k, v := range tm.componentDirectories {
+			if v == directory {
+				tm.componentDirectories = append(tm.componentDirectories[:k], tm.componentDirectories[k + 1:]...)
+				break
+			}
+		}
+		tm.mutex.Unlock()
+	}
+
+	return tm
+}
+
 // Removes a directory that was previously excluded to allow it to feature in the build scanning process (which only wants entry files).
 func (tm *TemplateManager) RemoveExcludedDirectory(directory string) *TemplateManager {
 	if slices.Contains(tm.excludedDirectories, directory) {
@@ -360,7 +424,7 @@ func (tm *TemplateManager) RemoveFunctions(names []string) *TemplateManager {
 func (tm *TemplateManager) RemoveOverloadFunctions() *TemplateManager {
 	names := getOverloadFunctions()
 	tm.mutex.Lock()
-	for name, _ := range names {
+	for name := range names {
 		delete(tm.functions, name)
 	}
 	tm.mutex.Unlock()
@@ -478,6 +542,49 @@ func (tm *TemplateManager) reParseIndividualTemplate(path string) error {
 	return nil
 }
 
+func (tm *TemplateManager) parseComponents() error {
+	var err error
+
+	walk := func(path string, info fs.DirEntry, err error) error {
+		if err != nil || info == nil {
+			return err
+		}
+
+		if len(tm.extension) >= len(path) || path[len(path) - len(tm.extension):] != tm.extension {
+			return nil
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		componentPath, _ := cleanPath(path, tm.directory)
+		index := strings.LastIndex(componentPath, "/")
+		name := stripExtension(componentPath[index + 1:])
+		tm.components[name] = componentPath
+
+		return nil
+	}
+
+	for _, componentDirectory := range tm.componentDirectories {
+		if tm.fileSystem != nil {
+			err = fsWalk.WalkDir(tm.fileSystem, "/" + componentDirectory, walk)
+		} else {
+			err = filepath.WalkDir(tm.directory + "/" + componentDirectory, walk)
+		}
+	}
+
+	if err == nil {
+		tm.parsed = true
+
+		if tm.debug {
+			logSuccess("All templates parsed and ready to use")
+		}
+	}
+
+	return err
+}
+
 // Handles parsing an individual file
 func (tm *TemplateManager) parseFileDependencies(path string, name string, directory string, tmpl *template.Template) error {
 	dependencies, err := tm.getFileDependencies(path, directory)
@@ -547,6 +654,20 @@ func (tm *TemplateManager) parseFileDependencies(path string, name string, direc
 func (tm *TemplateManager) configureNewTemplate(tmpl *template.Template) *template.Template {
 	tmpl.Delims(tm.delimiterLeft, tm.delimiterRight)
 	tmpl.Funcs(tm.functions)
+	tmpl.Funcs(map[string]any {
+		"render": func(name string, args ...any) string {
+			var data any = nil
+			if len(args) > 0 {
+				data = args[0]
+			}
+            buf := &bytes.Buffer{}
+            err := tmpl.ExecuteTemplate(buf, name, data)
+			if err != nil {
+				return ""
+			}
+            return buf.String()
+        },
+	})
 
 	return tmpl
 }
@@ -572,7 +693,6 @@ func (tm *TemplateManager) addTemplate(path string, name string, directory strin
 
 // Reads a file's contents and gets any extended templates too
 func (tm *TemplateManager) getFileContents(path string, directory string) ([]string, error) {
-	//buffer, err := os.ReadFile(path)
 	buffer, err := fsWalk.ReadFile(path, tm.fileSystem)
 	if err != nil {
 		return []string{}, err
@@ -580,47 +700,48 @@ func (tm *TemplateManager) getFileContents(path string, directory string) ([]str
 	content  := string(buffer)
 	contents := []string{}
 
-	findVars, _	:= regexp.Compile("(?s)\\s*{{\\s*var\\s*[\"`]{1}\\s*([^\"]+)\\s*[\"`]{1}.*?}}\\s*(.*?)\\s*{{\\s*end\\s*}}\\s*")
+	findVars, _	:= regexp.Compile("(?s)\\s*" + tm.delimiterLeft + "\\s*var\\s*[\"`]{1}\\s*([^\"]+)\\s*[\"`]{1}.*?" + tm.delimiterRight + "\\s*(.*?)\\s*" + tm.delimiterLeft + "\\s*end\\s*" + tm.delimiterRight + "\\s*")
 
-	if findVars.Match(buffer) {
-		matches := findVars.FindAllSubmatch(buffer, -1)
+	if findVars.MatchString(content) {
+		matches := findVars.FindAllStringSubmatch(content, -1)
 		name, _ := cleanPath(path, directory)
 
 		for _, match := range matches {
-			content = strings.Replace(content, string(match[0]), "", 1)
+			content = strings.Replace(content, match[0], "", 1)
 			varName := string(match[1])
 			if _, ok := tm.params[name][varName]; !ok {
-				tm.parseVariable(name, varName, string(match[2]))
+				tm.parseVariable(name, varName, match[2])
 			}
 		}
-		buffer = []byte(content)
 	}
 
-	findExtends, _ := regexp.Compile("^\\s*{{\\s*extends\\s*[\"`]{1}([^\"]+)[\"`]{1}.*?}}\\s*")
+	findExtends, _ := regexp.Compile("^\\s*" + tm.delimiterLeft + "\\s*extends\\s*[\"`]{1}([^\"]+)[\"`]{1}.*?" + tm.delimiterRight + "\\s*")
 
-	if findExtends.Match(buffer) {
-		matches := findExtends.FindAllSubmatch(buffer, -1)
-		content = strings.Replace(content, string(matches[0][0]), "", 1)
-		contents, err = tm.getFileContents(directory + "/" + string(matches[0][1]), directory)
+	if findExtends.MatchString(content) {
+		matches := findExtends.FindAllStringSubmatch(content, -1)
+		content = strings.Replace(content, matches[0][0], "", 1)
+		contents, err = tm.getFileContents(directory + "/" + matches[0][1], directory)
 		if err != nil {
 			return []string{}, err
 		}
 	}
+
+	content = tm.parseContentComponents(content, directory)
 
 	return append(contents, content), nil
 }
 
 // Recursively finds all file dependencies
 func (tm *TemplateManager) getFileDependencies(path string, directory string) ([]string, error) {
-	//buffer, err := os.ReadFile(path)
 	buffer, err := fsWalk.ReadFile(path, tm.fileSystem)
 	if err != nil {
 		return []string{}, err
 	}
 	dependencies := []string{}
 
-	findExtends, _		:= regexp.Compile("^\\s*{{\\s*extends\\s*[\"`]{1}([^\"]+)[\"`]{1}.*}}\\s*")
-	findTemplates, _	:= regexp.Compile("{{\\s*template\\s*[\"`]{1}([^\"]+)[\"`]{1}.*?}}")
+	
+	findExtends, _		:= regexp.Compile("^\\s*" + tm.delimiterLeft + "\\s*extends\\s*[\"`]{1}([^\"]+)[\"`]{1}.*" + tm.delimiterRight + "\\s*")
+	findTemplates, _	:= regexp.Compile(tm.delimiterLeft + "\\s*template\\s*[\"`]{1}([^\"]+)[\"`]{1}.*?" + tm.delimiterRight)
 
 	if findExtends.Match(buffer) {
 		matches := findExtends.FindAllSubmatch(buffer, -1)
@@ -649,6 +770,204 @@ func (tm *TemplateManager) getFileDependencies(path string, directory string) ([
 	}
 	
 	return dependencies, nil
+}
+
+func (tm *TemplateManager) parseContentComponents(content string, directory string) string {
+	if len(tm.components) > 0 {
+		findAttributes, _ := regexp.Compile(`(?s)([^=\s]+)\s*=\s*("[^"]+"|[\d\.\-]+)`)
+
+		for component, componentPath := range tm.components {
+			if strings.Contains(content, "<" + component) {	
+				matches := [][]string{}
+				findComponents, _ := regexp.Compile(`(?s)<` + component + `(\s+[^>]*)?\s*>(.*?)</` + component + `>`)
+
+				if findComponents.MatchString(content) {
+					matches = findComponents.FindAllStringSubmatch(content, -1)
+				} else {
+					findComponents, _ = regexp.Compile(`(?s)<` + component + `(\s+[^>]*)?\s*>`)
+					if findComponents.MatchString(content) {
+						matches = findComponents.FindAllStringSubmatch(content, -1)
+					}
+				}
+
+				for _, match := range matches {
+					random_id := uuid.NewString()
+					find := match[0]
+					replace := tm.delimiterLeft + ` block "` + componentPath + `-` + random_id + `"`
+					
+					attributes := match[1]
+					tagContent := ""
+					if len(match) > 2 {
+						tagContent = match[2]
+					}
+					
+					replace += ` collection "ComponentUuid" "` + random_id + `" "ComponentContent" "content-` + random_id + `"`
+					if len(attributes) > 0 {
+						attributes := findAttributes.FindAllStringSubmatch(attributes, -1)
+						for _, attribute := range attributes {
+							bias := "numeric"
+							if strings.HasPrefix(attribute[2], `"`) {
+								bias = "string"
+							}
+
+							value := strings.Trim(attribute[2], `"`)
+							if bias == "string" {
+								if strings.HasPrefix(value, tm.delimiterLeft) && strings.HasSuffix(value, tm.delimiterRight) {
+									value = strings.TrimRight(strings.TrimLeft(value, tm.delimiterLeft + " "), tm.delimiterRight + " ")
+								} else {
+									value = `"` + value + `"`
+								}
+							}
+
+							replace += ` "` + strings.Trim(attribute[1], " ") + `" ` + value
+						}
+					} else {
+						replace += ` "Null" ""`
+					}
+
+					if len(tagContent) > 0 {
+						// {{- define "content-RANDOM_ID" -}} passed content {{- end -}}
+						tagContent = tm.delimiterLeft + `- define "content-` + random_id + `" -` + tm.delimiterRight + tagContent + tm.delimiterLeft + `- end -` + tm.delimiterRight
+					}
+
+					componentContents, err := tm.getFileContents(directory + "/" + componentPath, directory)
+					if err != nil {
+						continue
+					}
+					componentContent := componentContents[0] // TODO - this is wrong, will fail if extended. Cannot extend?
+
+					replace += ` -` + tm.delimiterRight + componentContent + tm.delimiterLeft + `- end ` + tm.delimiterRight
+
+					content = tagContent + strings.Replace(content, find, replace, 1)
+				}
+			}
+			if strings.Contains(content, "<x-" + component) {	
+				matches := [][]string{}
+				findComponents, _ := regexp.Compile(`(?s)<x-` + component + `(\s+[^>]*)?\s*>(.*?)</x-` + component + `>`)
+
+				if findComponents.MatchString(content) {
+					matches = findComponents.FindAllStringSubmatch(content, -1)
+				} else {
+					findComponents, _ = regexp.Compile(`(?s)<x-` + component + `(\s+[^>]*)?\s*>`)
+					if findComponents.MatchString(content) {
+						matches = findComponents.FindAllStringSubmatch(content, -1)
+					}
+				}
+				for _, match := range matches {
+					random_id := uuid.NewString()
+					find := match[0]
+					define := tm.delimiterLeft + ` define "` + componentPath + `-` + random_id + `"`
+					
+					attributes := match[1]
+					tagContent := ""
+					if len(match) > 2 {
+						tagContent = match[2]
+					}
+					
+					create := `(collection "ComponentUuid" "` + random_id + `" "ComponentContent" "content-` + random_id + `"`
+					if len(attributes) > 0 {
+						attributes := findAttributes.FindAllStringSubmatch(attributes, -1)
+						for _, attribute := range attributes {
+							bias := "numeric"
+							if strings.HasPrefix(attribute[2], `"`) {
+								bias = "string"
+							}
+
+							value := strings.Trim(attribute[2], `"`)
+							if bias == "string" {
+								if strings.HasPrefix(value, tm.delimiterLeft) && strings.HasSuffix(value, tm.delimiterRight) {
+									value = strings.TrimRight(strings.TrimLeft(value, tm.delimiterLeft + " "), tm.delimiterRight + " ")
+								} else {
+									value = `"` + value + `"`
+								}
+							}
+
+							create += ` "` + strings.Trim(attribute[1], " ") + `" ` + value
+						}
+					} else {
+						create += ` "Null" ""`
+					}
+
+					if len(tagContent) > 0 {
+						// {{- define "content-RANDOM_ID" -}} passed content {{- end -}}
+						tagContent = tm.delimiterLeft + `- define "content-` + random_id + `" -` + tm.delimiterRight + tagContent + tm.delimiterLeft + `- end -` + tm.delimiterRight
+					}
+
+					componentContents, err := tm.getFileContents(directory + "/" + componentPath, directory)
+					if err != nil {
+						continue
+					}
+					componentContent := componentContents[0] // TODO - this is wrong, will fail if extended. Cannot extend?
+
+					define += ` -` + tm.delimiterRight + componentContent + tm.delimiterLeft + `- end ` + tm.delimiterRight
+
+					content = tagContent + define + strings.Replace(content, find, tm.delimiterLeft + ` ` + component + ` x-render "` + componentPath + `-` + random_id + `" ` + create + `) ` + tm.delimiterRight, 1)
+				}
+			}
+		}
+
+		// Collect nested components
+		if strings.Contains(content, `x-render "`) {
+			// TODO - (.+?(?:x\-render).+?)
+			findGeneratedDefines, _ := regexp.Compile(`(?s)` + tm.delimiterLeft + `- define "content-([^"]{36})" -` + tm.delimiterRight + `(.+?)` + tm.delimiterLeft + `- end -` + tm.delimiterRight)
+			findCollectionComponents, _ := regexp.Compile(`(?s)` + tm.delimiterLeft + ` ([^ ]+) x\-(render "[^ ]+-([^"]{36})" \(collection "ComponentUuid" .*?)` + tm.delimiterRight)
+			
+			if findGeneratedDefines.MatchString(content) {
+				matches := findGeneratedDefines.FindAllStringSubmatch(content, -1)
+				for _, match := range matches {
+					// Individual component content definition to act upon
+					if strings.Contains(match[2], `x-render`) {
+						collectedVars := map[string][]string{}
+
+						wholeDefine := match[0]
+						newDefine := match[0]
+						defineId := match[1]
+						defineContents := match[2]
+
+						if findCollectionComponents.MatchString(defineContents) {
+							submatches := findCollectionComponents.FindAllStringSubmatch(defineContents, -1)
+							for _, submatch := range submatches {
+								wholeComponent := submatch[0]
+								componentName := submatch[1]
+								componentRender := submatch[2]
+
+								if _, ok := collectedVars[componentName]; !ok {
+									collectedVars[componentName] = []string{}
+								}
+								collectedVars[componentName] = append(collectedVars[componentName], strings.Replace(componentRender, `collection "ComponentUuid"`, `collection "ParentUuid" "` + defineId + `" "ParentPosition" ` + strconv.Itoa(len(collectedVars[componentName])) + ` "ComponentUuid"`, 1))
+
+								newDefine = strings.Replace(newDefine, wholeComponent, "", 1)
+							}
+						}
+
+						content = strings.Replace(content, wholeDefine, newDefine, 1)
+
+						// Add collected variables to the parent template definition
+						findParentDefine, _ := regexp.Compile(`(?s)` + tm.delimiterLeft + ` block ".+?-` + defineId + `" (.*?) \-` + tm.delimiterRight)
+						if findParentDefine.MatchString(content) {
+							submatches := findParentDefine.FindAllStringSubmatch(content, -1)
+							for _, submatch := range submatches {
+								wholeMaster := submatch[0]
+								collected := submatch[1]
+								for varName, slice := range collectedVars {
+									collected += ` "` + varName + `" (list`
+									for _, value := range slice {
+										collected += ` (` + value + `)`
+									}
+									collected += `)`
+								}
+								newMaster := strings.Replace(wholeMaster, submatch[1], collected, 1)
+
+								content = strings.Replace(content, wholeMaster, newMaster, 1)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return content
 }
 
 // Parses a variable declared in a template file
@@ -783,4 +1102,10 @@ func cleanPath(path string, directory string) (string, error) {
 	}
 
 	return filepath.ToSlash(file), nil
+}
+
+// Removes the extension from a file
+func stripExtension(file string) string {
+	index := strings.LastIndex(file, ".")
+	return file[:index] 
 }

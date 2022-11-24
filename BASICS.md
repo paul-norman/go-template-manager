@@ -29,10 +29,10 @@ This short guide does not cover how to configure these templates *(what `templat
 
 ## Basic Syntax
 
-There are only 10 keywords in the package:
+There are only 11 keywords in the package:
 
 ```
-block, break, define, else, end, if, range, nil, template, with
+block, break, continue, define, else, end, if, range, nil, template, with
 ```
 
 and the special `.` (dot) operator which allows access to variables in any given "context" *(more on that later)*.
@@ -53,23 +53,23 @@ Some statements also require an `{{ end }}` tag:
 
 It is often clearer to write statements such as the above `define` statement with space before and after the content. However, this will result in physical whitespace characters being added to the content *(often undesirably)*.
 
-To trigger stripping of whitespace, the delimiters may have a hyphen attached to them to trigger that whitespace will be removed from that direction:
+To trigger stripping of whitespace, the delimiters may have a hyphen attached to them to trigger that all whitespace will be removed from that direction *(until the next non-whitespace character)*:
 
 ```django
 some {{ block "name1" }} content {{ end }} here
-<!-- some  content  here-->
+<!-- some  content  here -->
 
 some {{ block "name2" -}} ltrimmed content {{ end }} here
-<!-- some ltrimmed content  here-->
+<!-- some ltrimmed content  here -->
 
 some {{ block "name2" }} rtrimmed content {{- end }} here
-<!-- some  ltrimmed content here-->
+<!-- some  rtrimmed content here -->
 
 some {{ block "name3" -}} trimmed content {{- end }} here
-<!-- some trimmed content here-->
+<!-- some trimmed content here -->
 
 some {{- block "name4" -}} squashed content {{- end -}} here
-<!-- somesquashed contenthere-->
+<!-- somesquashed contenthere -->
 ```
 
 ### Comments
@@ -119,7 +119,7 @@ Hello {{ $test }} <!-- Hello World -->
 Hello {{ $test }} <!-- Hello Bob -->
 ```
 
-These are limited to the current file context unless specifically passed in to another template / block.
+These are limited to the current file context unless specifically passed in to another template / block. If they are defined in a sub-block, they will not be available in parent contexts.
 
 ### Global Variables
 
@@ -170,7 +170,7 @@ nil                       => false
 
 ### `with`
 
-`with` is very similar to `if` in that checks to see if a variable is empty and if not executes its block. However, `with` reassigns the `.` (dot) to that variable's value for the duration of the block.
+`with` is very similar to `if` in that it checks to see if a variable is empty and if not executes its block. However, `with` reassigns the `.` (dot) to that variable's value for the duration of the block.
 
 ```django
 {{ with .Variable }}
@@ -230,7 +230,7 @@ It is also possible to get the index alongside the value from the `range` functi
 </dl>
 ```
 
-It's possible to break a range loop early by calling `{{ break }}` within the loop. If there are nested ranges, this only stops the first loop that directly contains it. 
+It's possible to break a range loop early by calling `{{ break }}` within the loop. If there are nested ranges, this only stops the first loop that directly contains it. It is also possible to skip a single loop by calling `{{ continue }}` within the loop. If there are nested ranges, this only skips the first loop that directly contains it.
 
 ### `template`
 
@@ -327,7 +327,7 @@ if or x y // true if either x or y is true
 
 #### `not`
 ```go 
-if not x // true if either x is false
+if not x // true if x is false
 ```
 
 ### Equality Operators

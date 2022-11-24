@@ -18,12 +18,72 @@ func roundFloat(float float64, precision uint) float64 {
 }
 
 /*
+Floors floats to integers for numeric conversion.
+*/
+func floorFloat(float float64, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+
+	return math.Floor(float * ratio) / ratio
+}
+
+/*
+Ceils floats to integers for numeric conversion.
+*/
+func ceilFloat(float float64, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+
+	return math.Ceil(float * ratio) / ratio
+}
+
+/*
 Checks if two floats are equal (to a very small tolerance).
 */
 func equalFloats(float1 float64, float2 float64) bool {
 	diff := math.Abs(float1 - float2)
 
 	return diff < 0.00000000001
+}
+
+/*
+A helper that powers the 3 divide functions.
+*/
+func divideHelper(roundMethod reflect.Value, divisor reflect.Value, value reflect.Value) reflect.Value {
+	sig		:= "divide" + roundMethod.String() + "(divisor int, value any)"
+	divisor	= reflectHelperUnpackInterface(divisor)
+	value	= reflectHelperUnpackInterface(value)
+
+	if !reflectHelperIsNumeric(divisor) {
+		logError(sig + fmt.Sprintf(" divisor must be numeric, not %s", value.Type()))
+		return value
+	}
+
+	div, _ := reflectHelperConvertToFloat64(divisor)
+	if div == 0.0 {
+		logError(sig + " divisor must not be zero")
+		return value
+	}
+
+	switch value.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, 
+		reflect.Uint64:
+			val, _ := reflectHelperConvertToFloat64(value)
+			op := val / div
+			switch roundMethod.String() {
+				case "ceil": op = ceilFloat(op, 0)
+				case "floor": op = floorFloat(op, 0)
+				case "round": op = roundFloat(op, 0)
+			}
+			return reflect.ValueOf(int64(op)).Convert(value.Type())
+		case reflect.Float32, reflect.Float64:
+			val, _ := reflectHelperConvertToFloat64(value)
+			op := val / div
+			return reflect.ValueOf(op).Convert(value.Type())
+		case reflect.String, reflect.Bool:
+			logWarning(sig + fmt.Sprintf(" trying to divide a %s", value.Type()))
+			return value
+	}
+
+	return recursiveHelper(value, reflect.ValueOf(divideHelper), roundMethod, divisor)
 }
 
 /*

@@ -2,7 +2,7 @@
 
 All functions in `templateManager` accept their principle argument **last** to allow simple chaining. *Efforts have been made to output clear errors and return suitable empty values rather than cause panics (a problem in several `text/template` functions)*.
 
-Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divisibleby`](#divisibleby), [`dl`](#dl), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`gto`](#gto-greater-than), [`gte`](#gte-greater-than-equal), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`lto`](#lto-less-than), [`lte`](#lte-less-than-equal), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`split`](#split), [`striptags`](#striptags), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
+Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divideceil`](#divideceil), [`dividefloor`](#dividefloor), [`divisibleby`](#divisibleby), [`dl`](#dl), [`endswith`](#endswith), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`gto`](#gto-greater-than), [`gte`](#gte-greater-than-equal), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`iterable`](#iterable), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`list`](#list), [`lto`](#lto-less-than), [`lte`](#lte-less-than-equal), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`md5`](#md5), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`query`](#query), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`render`](#render), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`sha1`](#sha1), [`sha256`](#sha256), [`sha512`](#sha512), [`split`](#split), [`startswith`](#startswith), [`striptags`](#striptags), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`uuid`](#uuid), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
 
 ## `add`
 
@@ -330,6 +330,40 @@ Returns new variable of the original `value` data type.
 {{ divide "string" .Test }} <!-- ["first": 10, "second": 20] -->
 ```
 
+## `divideceil`
+
+```go
+func divideceil[D int|float64, T any](divisor D, value T) T
+```
+
+Divides the `value` by the `divisor`. If `value` is a slice, array or map it will apply this conversion to any numeric elements that they contain. All values are first converted to floats, the operation is performed and then any **rounding (ceil) is applied as necessary to return the item to its original type**.
+
+Returns new variable of the original `value` data type.
+
+```django
+<!-- Integers: .Test is 10 -->
+{{ divideceil 3 .Test }} <!-- 4 -->
+```
+
+See [`divide`](#divide) for further examples.
+
+## `dividefloor`
+
+```go
+func dividefloor[D int|float64, T any](divisor D, value T) T
+```
+
+Divides the `value` by the `divisor`. If `value` is a slice, array or map it will apply this conversion to any numeric elements that they contain. All values are first converted to floats, the operation is performed and then any **rounding (floor) is applied as necessary to return the item to its original type**.
+
+Returns new variable of the original `value` data type.
+
+```django
+<!-- Integers: .Test is 10 -->
+{{ dividefloor 4 .Test }} <!-- 2 -->
+```
+
+See [`divide`](#divide) for further examples.
+
 ## `divisibleby`
 
 ```go
@@ -399,6 +433,23 @@ Other data types will just return a string representation of themselves.
 		</dl>
 	</dd>
 </dl>
+```
+
+## `endswith`
+
+```go
+func endswith(find string, value string) bool
+```
+
+Tests whether a string `value` ends with another string, `find`. Returns false if either value is not a string.
+
+```django
+{{ if endswith "fox" "the quick brown fox" }} ends with fox {{ end }}
+<!-- ends with fox -->
+
+<!-- OR more idiomatically...  -->
+{{ if "the quick brown fox" | endswith "fox" }} ends with fox {{ end }}
+<!-- ends with fox -->
 ```
 
 ## `equal`
@@ -535,6 +586,27 @@ Returns new variable of the original `value` data type.
 
 *(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`html`](BASICS.md#html) function)*
 
+## `iterable`
+
+```go
+func iterable(options ...int) []int
+```
+
+There is no `for` loop in the `text/template` package, but one can be simulated using the `range` function and an integer slice. The `iterable` function allows a slice to be created for this purpose.
+
+The possible options are best illustrated with examples:
+
+```django
+<!-- for i := 0; i < 5; i++ -->
+{{ range $i := iterable 5 }} {{ $i }} {{ end }}
+
+<!-- for i := 3; i < 5; i++ -->
+{{ range $i := iterable 3 5 }} {{ $i }} {{ end }}
+
+<!-- for i := 3; i < 5; i += 2 -->
+{{ range $i := iterable 3 5 2 }} {{ $i }} {{ end }}
+```
+
 ## `join`
 
 ```go
@@ -660,6 +732,19 @@ Gets length of any type. Unlike the `text/template` function: `len`, the `length
 
 *(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`len`](BASICS.md#len) function)*
 
+## `list`
+
+```go
+func list(values ...any) []any
+```
+
+Accepts any number of arguments / types and returns a slice of interfaces that may be iterated over.
+
+```django
+{{ $list := list 1 "string" true }}
+<!-- [1, "string", true] -->
+```
+
 ## `lto` (less than)
 
 ```go
@@ -748,6 +833,19 @@ Returns new variable of the original `value` data type.
 
 {{ ltrim "hT" "  This string. Has TWO sentences." }}
 <!-- This string. Has TWO sentences. -->
+```
+
+## `md5`
+
+```go
+func md5(value any) string
+```
+
+The `md5` function creates an MD5 hash for whatever variable is passed to it. Since hashing algorithms only accept strings, any other type of variable is first given a string value and then hashed.
+
+```django
+{{ md5 "anything" }}
+<!-- f0e166dc34d14d6c228ffac576c9a43c -->
 ```
 
 ## `mktime`
@@ -981,15 +1079,16 @@ It can accept various parameter combinations:
 ## `prefix`
 
 ```go
-func prefix[T any](prefix string, value T) T
+func prefix[T any](prefix ...string, value T) T
 ```
 
-Prefixes all strings within `value` with `prefix`. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
+Prefixes all strings within `value` with all strings within `prefix`. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
 Returns new variable of the original `value` data type.
 
 ```django
 {{ prefix "prefix " "value" }} <!-- prefix value -->
+{{ prefix "prefix1 " "prefix2 " "value" }} <!-- prefix1 prefix2 value -->
 
 <!-- Slices / Arrays: .Test is ["string1", "string2"] -->
 {{ prefix "prefix " .Test }}
@@ -998,6 +1097,39 @@ Returns new variable of the original `value` data type.
 <!-- Maps: .Test is [1: "string1", 2: "string2"] -->
 {{ prefix "prefix " .Test }}
 <!-- [1: "prefix string1", 2: "prefix string2"] -->
+```
+
+## `query`
+
+```go
+func query[T any](name string, value any, link T) T
+```
+
+Acts upon URL query strings and allows parameters to be added / replaced within them *(the parameter being acted upon, `name`, will always be removed prior to the new value being added)*. If value is a slice / array, then an array variable will be created. If value is a map or struct, then a map variable will be created.
+
+Returns new variable of the original `value` data type.
+
+```django
+{{ query "test" "value" "/" }}
+<!-- /?test=value -->
+
+{{ query "test" "value" "/?test=1" }}
+<!-- /?test=value -->
+
+{{ query "test" "value" "/?existing=1" }}
+<!-- /?existing=1&test=value -->
+
+<!-- .Slice is: []string{"value1", "value2"} -->
+{{ query "test" .Slice "/" }}
+<!-- /?test[]=value1&test[]=value2 -->
+
+<!-- .Map is: map[string]string{"name1": "value1", "name2": "value2"} -->
+{{ query "test" .Map "/" }}
+<!-- /?test[name1]=value1&test[name2]=value2 -->
+
+<!-- .Struct is: struct{ name1, name2 string }{"value1", "value2"} -->
+{{ query "test" .Struct "/" }}
+<!-- /?test[name1]=value1&test[name2]=value2 -->
 ```
 
 ## `random`
@@ -1058,6 +1190,23 @@ Returns new variable of the original `value` data type.
 <!-- hard to replaced it in -->
 ```
 
+## `render`
+
+```go
+func render(name string, parameters any) string
+```
+
+Renders a template defined within the current template scope. This differs from the `text/template` defined `template` keyword in that its scope is more limited (to templates defined within the template itself), but will also accept a variable as the input variable.
+
+This function is mainly used with [components](COMPONENTS.md#passing-data-to-components) when passing wrapped values.
+
+```django
+{{ define "template123" }} Template content here {{ end }}
+{{ $template := "template123" }}
+{{ render $template . }}
+<!-- Template content here -->
+```
+
 ## `replace`
 
 ```go
@@ -1110,6 +1259,45 @@ Returns new variable of the original `value` data type.
 <!-- This string. Has TWO sentences.   -->
 ```
 
+## `sha1`
+
+```go
+func sha1(value any) string
+```
+
+The `sha1` function creates a SHA1 hash for whatever variable is passed to it. Since hashing algorithms only accept strings, any other type of variable is first given a string value and then hashed.
+
+```django
+{{ sha1 "anything" }}
+<!-- 8867c88b56e0bfb82cffaf15a66bc8d107d6754a -->
+```
+
+## `sha256`
+
+```go
+func sha256(value any) string
+```
+
+The `sha256` function creates a SHA256 hash for whatever variable is passed to it. Since hashing algorithms only accept strings, any other type of variable is first given a string value and then hashed.
+
+```django
+{{ sha256 "anything" }}
+<!-- ee0874170b7f6f32b8c2ac9573c428d35b575270a66b757c2c0185d2bd09718d -->
+```
+
+## `sha512`
+
+```go
+func sha512(value any) string
+```
+
+The `sha512` function creates a SHA512 hash for whatever variable is passed to it. Since hashing algorithms only accept strings, any other type of variable is first given a string value and then hashed.
+
+```django
+{{ sha512 "anything" }}
+<!-- cc27d84e5fdb68439143b6143f80ba4021e4b05380ba412b3652d56ec5ef86824da18eae36caab4a2f2aaddef32dea3058848c75f3415a0ea664d847d8e94b94 -->
+```
+
 ## `split`
 
 ```go
@@ -1124,6 +1312,23 @@ Splits strings on the `separator` value and returns a slice of the pieces. It on
 
 {{ split "::" "some::joined::data" }}
 <!-- ["some", "joined", "data"] --> 
+```
+
+## `startswith`
+
+```go
+func startswith(find string, value string) bool
+```
+
+Tests whether a string `value` starts with another string, `find`. Returns false if either value is not a string.
+
+```django
+{{ if startswith "the" "the quick brown fox" }} starts with the {{ end }}
+<!-- starts with the -->
+
+<!-- OR more idiomatically...  -->
+{{ if "the quick brown fox" | startswith "the" }} starts with the {{ end }}
+<!-- starts with the -->
 ```
 
 ## `striptags`
@@ -1202,15 +1407,16 @@ Subtracts a value from the existing item. If the subtracted value is a simple nu
 ## `suffix`
 
 ```go
-func suffix[T any](suffix string, value T) T
+func suffix[T any](suffix ...string, value T) T
 ```
 
-Suffixes all strings within `value` with `suffix`. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
+Suffixes all strings within `value` with all strings within `suffix`. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
 Returns new variable of the original `value` data type.
 
 ```django
 {{ suffix " suffix" "value" }} <!-- value suffix -->
+{{ suffix " suffix1" " suffix2" "value" }} <!-- value suffix1 suffix2 -->
 
 <!-- Slices / Arrays: .Test is ["string1", "string2"] -->
 {{ suffix " suffix" .Test }}
@@ -1474,6 +1680,19 @@ Returns new variable of the original `value` data type.
 ```
 
 *(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`urlquery`](BASICS.md#urlquery) function)*
+
+## `uuid`
+
+```go
+func uuid() string
+```
+
+Generates a unique ID using the `github.com/google/uuid` package based on RFC 4122 and DCE 1.1.
+
+```django
+{{ uuid }}
+<!-- f47ac10b-58cc-0372-8567-0e02b2c3d479 -->
+```
 
 ## `wordcount`
 

@@ -306,6 +306,52 @@ func TestDivide(tester *testing.T) {
 	testRunArgTests(divide, tests, tester)
 }
 
+func TestDivideCeil(tester *testing.T) {
+	tests := []struct { input1, input2, expected any } {
+		{ "string", 10, 10 },
+		{ true, 10, 10 },
+		{ 0, 10, 10 },
+		{ 3, 10, 4 },
+		{ -2, 10, -5 },
+		{ 2, -10, -5 },
+		{ 2, 10.3, 5.15 },
+		{ 3.3, -104.3, -31.606060606060606 },
+		{ 5, "test", "test" },
+		{ 5, []string{"test"}, []string{"test"} },
+		{ 5, []int{10, 20}, []int{2, 4} },
+		{ 5.1, []int{10, 20}, []int{2, 4} },
+		{ 3.2, []float64{10, 20}, []float64{3.125, 6.25} },
+		{ 5, map[string]int{"val1": 10, "val2": 20}, map[string]int{"val1": 2, "val2": 4} },
+		{ 5, struct{ Num1, Num2 int }{10, 20}, struct{ Num1, Num2 int }{2, 4} },
+		{ 5, struct{ num1, num2 int }{10, 20}, struct{ num1, num2 int }{0, 0} },
+	}
+
+	testRunArgTests(divideCeil, tests, tester)
+}
+
+func TestDivideFloor(tester *testing.T) {
+	tests := []struct { input1, input2, expected any } {
+		{ "string", 10, 10 },
+		{ true, 10, 10 },
+		{ 0, 10, 10 },
+		{ 3, 10, 3 },
+		{ -2, 10, -5 },
+		{ 2, -10, -5 },
+		{ 2, 10.3, 5.15 },
+		{ 3.3, -104.3, -31.606060606060606 },
+		{ 5, "test", "test" },
+		{ 5, []string{"test"}, []string{"test"} },
+		{ 5, []int{10, 20}, []int{2, 4} },
+		{ 5.1, []int{10, 20}, []int{1, 3} },
+		{ 3.2, []float64{10, 20}, []float64{3.125, 6.25} },
+		{ 5, map[string]int{"val1": 10, "val2": 20}, map[string]int{"val1": 2, "val2": 4} },
+		{ 5, struct{ Num1, Num2 int }{10, 20}, struct{ Num1, Num2 int }{2, 4} },
+		{ 5, struct{ num1, num2 int }{10, 20}, struct{ num1, num2 int }{0, 0} },
+	}
+
+	testRunArgTests(divideFloor, tests, tester)
+}
+
 func TestDivisibleBy(tester *testing.T) {
 	tests := []struct { input1, input2, expected any } {
 		{ 0, 10, false },
@@ -351,6 +397,17 @@ func TestDl(tester *testing.T) {
 	}
 
 	testRunArgTests(dl, tests, tester)
+}
+
+func TestEndswith(tester *testing.T) {
+	tests := []struct { input1, input2, expected any } {
+		{ true, "anything", false },
+		{ "word", "word is first", false },
+		{ input1: "first", input2: "word is first", expected: true },
+		{ input1: "dog", input2: []string{"word is first"}, expected: false },
+	}
+
+	testRunArgTests(endswith, tests, tester)
 }
 
 func TestEqual(tester *testing.T) {
@@ -605,30 +662,50 @@ func TestHtmlEncode(tester *testing.T) {
 	testRunArgTests(htmlEncode, tests, tester)
 }
 
-func TestJoin(tester *testing.T) {
-	tests := []struct{ inputs []any; result any; expected any } {
-		{ []any{", ", ""}, join(", ", reflect.ValueOf("")), "" },
-		{ []any{", ", nil}, join(", ", reflect.ValueOf(nil)), "" },
-		{ []any{", ", 0}, join(", ", reflect.ValueOf(0)), "0" },
-		{ []any{", ", -1}, join(", ", reflect.ValueOf(-1)), "-1" },
-		{ []any{", ", 1}, join(", ", reflect.ValueOf(1)), "1" },
-		{ []any{", ", 0.0}, join(", ", reflect.ValueOf(0.0)), "0" },
-		{ []any{", ", 1.0}, join(", ", reflect.ValueOf(1.0)), "1" },
-		{ []any{", ", 0.1}, join(", ", reflect.ValueOf(0.1)), "0.1" },
-		{ []any{", ", 1.1}, join(", ", reflect.ValueOf(1.1)), "1.1" },
-		{ []any{", ", true}, join(", ", reflect.ValueOf(true)), "true" },
-		{ []any{", ", false}, join(", ", reflect.ValueOf(false)), "false" },
-		{ []any{", ", "string value"}, join(", ", reflect.ValueOf("string value")), "string value" },
-		{ []any{", ", []string{"string", "value"}}, join(", ", reflect.ValueOf([]string{"string", "value"})), "string, value" },
-		{ []any{", ", []int{1, 2}}, join(", ", reflect.ValueOf([]int{1, 2})), "1, 2" },
-		{ []any{", ", []float64{0.0, 1.1, 2.2}}, join(", ", reflect.ValueOf([]float64{0.0, 1.1, 2.2})), "0, 1.1, 2.2" },
-		{ []any{", ", []bool{true, false, true}}, join(", ", reflect.ValueOf([]bool{true, false, true})), "true, false, true" },
-		{ []any{", ", map[int]string{1: "first", 2: "second"}}, join(", ", reflect.ValueOf(map[int]string{1: "first", 2: "second"})), "first, second" },
-		{ []any{", ", map[int][]string{1: {"first", "second"}, 2: {"third"}}}, join(", ", reflect.ValueOf(map[int][]string{1: {"first", "second"}, 2: {"third"}})), "first, second, third" },
-		{ []any{", ", struct{ first string; second int; third float64 } {"first", 1, 1.1}}, join(", ", reflect.ValueOf(struct{ first string; second int; third float64 } {"first", 1, 1.1})), "first, 1, 1.1" },
+func TestIterable(tester *testing.T) {
+	tests := []struct { inputs []any; result any; expected any } {
+		{ []any{0}, iterable(0), []int{} },
+		{ []any{1}, iterable(1), []int{0} },
+		{ []any{5}, iterable(5), []int{0, 1, 2, 3, 4} },
+		{ []any{-5}, iterable(-5), []int{} },
+		{ []any{1, 3}, iterable(1, 3), []int{1, 2} },
+		{ []any{5, 9}, iterable(5, 9), []int{5, 6, 7, 8} },
+		{ []any{-5, -1}, iterable(-5, -1), []int{-5, -4, -3, -2} },
+		{ []any{1, 3, 2}, iterable(1, 3, 2), []int{1} },
+		{ []any{5, 9, 2}, iterable(5, 9, 2), []int{5, 7} },
+		{ []any{5, 9, 20}, iterable(5, 9, 20), []int{5} },
+		{ []any{-5, -1, -1}, iterable(-5, -1, -1), []int{} },
+		{ []any{-1, -5, -1}, iterable(-1, -5, -1), []int{} },
 	}
 
-	testRunTests("join", tests, tester)
+	testRunTests("iterable", tests, tester)
+}
+
+func TestJoin(tester *testing.T) {
+	tests := []struct { input1, input2, expected any } {
+		{ ", ", "", "" },
+		{ ", ", nil, "" },
+		{ ", ", 0, "0" },
+		{ ", ", -1, "-1" },
+		{ ", ", 1, "1" },
+		{ ", ", 0.0, "0" },
+		{ ", ", 1.0, "1" },
+		{ ", ", 0.1, "0.1" },
+		{ ", ", 1.1, "1.1" },
+		{ ", ", true, "true" },
+		{ ", ", false, "false" },
+		{ ", ", "string value", "string value" },
+
+		{ ", ", []string{"string", "value"}, "string, value" },
+		{ ", ", []int{1, 2}, "1, 2" },
+		{ ", ", []float64{0.0, 1.1, 2.2}, "0, 1.1, 2.2" },
+		{ ", ", []bool{true, false, true}, "true, false, true" },
+		{ ", ", map[int]string{1: "first", 2: "second"}, "first, second" },
+		{ ", ", map[int][]string{1: {"first", "second"}, 2: {"third"}}, "first, second, third" },
+		{ ", ", struct{ first string; second int; third float64 } {"first", 1, 1.1}, "first, 1, 1.1" },
+	}
+
+	testRunArgTests(join, tests, tester)
 }
 
 func TestJsonDecode(tester *testing.T) {
@@ -977,6 +1054,26 @@ func TestLtrim(tester *testing.T) {
 	testRunArgTests(ltrim, tests, tester)
 }
 
+func TestMd5(tester *testing.T) {
+	tests := []struct { input1, expected any } {
+		{ true, "b326b5062b2f0e69046810717534cb09" },
+		{ "anything", "f0e166dc34d14d6c228ffac576c9a43c" },
+		{ -10, "1b0fd9efa5279c4203b7c70233f86dbf" },
+		{ int8(10), "d3d9446802a44259755d38e6d163e820" },
+		{ uint(10), "d3d9446802a44259755d38e6d163e820" },
+		{ uint32(10), "d3d9446802a44259755d38e6d163e820" },
+		{ 10.45, "f389f08b2d1aca50e981a1e91286169d" },
+		{ 1.66666666667, "11f53b8d65f3b30d17267d71cd5d9142" },
+		{ []string{"hello world"}, "685d85b3c8e128e36e3252f73eb8bfd5" },
+		{ [2]string{"hello", "world"}, "04d32f084c0dfcaaf4b084d4c8862a28" },
+		{ map[string]string{"test": "hello world"}, "1e8598410deeb6961913d063ca3e72de" },
+		{ struct{Str string}{"hello world"}, "9e4cb5afcc8f0a06f1c246c4db2aa3bb" },
+		{ struct{str string}{"hello world"}, "c9f807f9cf913138441f31063601a907" },
+	}
+
+	testRunArgTests(md5Fn, tests, tester)
+}
+
 func TestMktime(tester *testing.T) {
 	testTime, _ := time.Parse(time.RFC3339, "2019-04-23T11:30:21+01:00")
 	testTime = testTime.In(dateLocalTimezone)
@@ -1159,24 +1256,46 @@ func TestPluralise(tester *testing.T) {
 }
 
 func TestPrefix(tester *testing.T) {
-	tests := []struct { input1, input2, expected any } {
-		{ "prefix", 10, 10 },
-		{ true, 10, 10 },
-		{ 0, 10, 10 },
-		{ "prefix", "test", "prefixtest" },
-		{ "prefix", []string{"test"}, []string{"prefixtest"} },
-		{ "prefix", []string{"test", "strings"}, []string{"prefixtest", "prefixstrings"} },
-		{ 5, []int{10, 20}, []int{10, 20} },
-		{ "prefix", []int{10, 20}, []int{10, 20} },
-		{ 5, map[int]string{1: "val1", 2: "val2"}, map[int]string{1: "val1", 2: "val2"} },
-		{ "prefix", map[int]string{1: "val1", 2: "val2"}, map[int]string{1: "prefixval1", 2: "prefixval2"} },
-		{ 5, struct{ Str1, Str2 string }{"val1", "val2"}, struct{ Str1, Str2 string }{"val1", "val2"} },
-		{ "prefix", struct{ Str1, Str2 string }{"val1", "val2"}, struct{ Str1, Str2 string }{"prefixval1", "prefixval2"} },
-		{ 5, struct{ str1, str2 string }{"val1", "val2"}, struct{ str1, str2 string }{"val1", "val2"} },
-		{ "prefix", struct{ str1, str2 string }{"val1", "val2"}, struct{ str1, str2 string }{"", ""} },
+	tests := []struct { inputs []any; expected any } {
+		{ []any{"prefix", 10}, 10 },
+		{ []any{true, 10}, 10 },
+		{ []any{0, 10}, 10 },
+		{ []any{"prefix", "test"}, "prefixtest" },
+		{ []any{"prefix", []string{"test"}}, []string{"prefixtest"} },
+		{ []any{"prefix", []string{"test", "strings"}}, []string{"prefixtest", "prefixstrings"} },
+		{ []any{5, []int{10, 20}}, []int{10, 20} },
+		{ []any{"prefix", []int{10, 20}}, []int{10, 20} },
+		{ []any{5, map[int]string{1: "val1", 2: "val2"}}, map[int]string{1: "val1", 2: "val2"} },
+		{ []any{"prefix", map[int]string{1: "val1", 2: "val2"}}, map[int]string{1: "prefixval1", 2: "prefixval2"} },
+		{ []any{5, struct{ Str1, Str2 string }{"val1", "val2"}}, struct{ Str1, Str2 string }{"val1", "val2"} },
+		{ []any{"prefix", struct{ Str1, Str2 string }{"val1", "val2"}}, struct{ Str1, Str2 string }{"prefixval1", "prefixval2"} },
+		{ []any{5, struct{ str1, str2 string }{"val1", "val2"}}, struct{ str1, str2 string }{"val1", "val2"} },
+		{ []any{"prefix", struct{ str1, str2 string }{"val1", "val2"}}, struct{ str1, str2 string }{"", ""} },
 	}
 
 	testRunArgTests(prefix, tests, tester)
+}
+
+func TestQuery(tester *testing.T) {
+	tests := []struct { input1, input2, input3, expected any } {
+		{ "test", "value", 26, 26},
+		{ true, "value", "/", "/"},
+		{ 12, "value", "/", "/"},
+		{ "test", "value", "/", "/?test=value" },
+		{ "test", "value", "/longer", "/longer?test=value" },
+		{ "test", "value", "http://www.example.com/longer", "http://www.example.com/longer?test=value" },
+		{ "test", "value", "/?test=1", "/?test=value" },
+		{ "test", "value", "/?existing[]=value1&existing[]=value2", "/?existing[]=value1&existing[]=value2&test=value" },
+		{ "test", "value", "/?existing[one]=value1&existing[two]=value2", "/?existing[one]=value1&existing[two]=value2&test=value" },
+		{ "test", []string{"value1", "value2"}, "/", "/?test[]=value1&test[]=value2" },
+		{ "test", map[string]string{"name1": "value1", "name2": "value2"}, "/", "/?test[name1]=value1&test[name2]=value2" },
+		{ "test", struct{name1, Name2 string}{"value1", "value2"}, "/", "/?test[name1]=value1&test[Name2]=value2" },
+
+		{ "existing", "value", "/?existing[]=1&existing[]=2", "/?existing=value" },
+		{ "existing", "value", "/?existing[one]=value1&existing[two]=value2", "/?existing=value" },
+	}
+
+	testRunArgTests(query, tests, tester)
 }
 
 func TestRandom(tester *testing.T) {
@@ -1299,6 +1418,66 @@ func TestRtrim(tester *testing.T) {
 	testRunArgTests(rtrim, tests, tester)
 }
 
+func TestSha1(tester *testing.T) {
+	tests := []struct { input1, expected any } {
+		{ true, "5ffe533b830f08a0326348a9160afafc8ada44db" },
+		{ "anything", "8867c88b56e0bfb82cffaf15a66bc8d107d6754a" },
+		{ -10, "35c0ba310bf18ad1a4c2544a19cee254ca5d900f" },
+		{ int8(10), "b1d5781111d84f7b3fe45a0852e59758cd7a87e5" },
+		{ uint(10), "b1d5781111d84f7b3fe45a0852e59758cd7a87e5" },
+		{ uint32(10), "b1d5781111d84f7b3fe45a0852e59758cd7a87e5" },
+		{ 10.45, "31b5223a130b55497399a8ad81f9a138f0838e90" },
+		{ 1.66666666667, "f18397626c3caa2085f245711190ffab00919993" },
+		{ []string{"hello world"}, "7ec7019f32634da15cb51a60f4eae40eae86b254" },
+		{ [2]string{"hello", "world"}, "37ea102be6932905e2ee81a96c6080984d121280" },
+		{ map[string]string{"test": "hello world"}, "28803e9112f466f37d6e10974091ea111dfb023e" },
+		{ struct{Str string}{"hello world"}, "2d4e2f0a92b8566a511653a81a87bf9540bc81e4" },
+		{ struct{str string}{"hello world"}, "4e0c001c2ab91a196cadc0b542a181eb68e9caa8" },
+	}
+
+	testRunArgTests(sha1Fn, tests, tester)
+}
+
+func TestSha256(tester *testing.T) {
+	tests := []struct { input1, expected any } {
+		{ true, "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b" },
+		{ "anything", "ee0874170b7f6f32b8c2ac9573c428d35b575270a66b757c2c0185d2bd09718d" },
+		{ -10, "c171d4ec282b23db89a99880cd624e9ba2940c1d894783602edab5d7481dc1ea" },
+		{ int8(10), "4a44dc15364204a80fe80e9039455cc1608281820fe2b24f1e5233ade6af1dd5" },
+		{ uint(10), "4a44dc15364204a80fe80e9039455cc1608281820fe2b24f1e5233ade6af1dd5" },
+		{ uint32(10), "4a44dc15364204a80fe80e9039455cc1608281820fe2b24f1e5233ade6af1dd5" },
+		{ 10.45, "e6e843038cbc70663cdb09ca925d58d6a5c4dfb11bd6dd6314dca195360f5e4d" },
+		{ 1.66666666667, "19fb7f024e7722d904a47fd9face8a4878bbe159df3972e2909a2ab9cba3fd81" },
+		{ []string{"hello world"}, "61ab313128f7ee161d50ba5e1bba01fe7bfcceb524ecc6278e5a8c0f2be4280b" },
+		{ [2]string{"hello", "world"}, "c68328a2c14c686164c662e06e0601959b398748eddd4847c52eceec2d28cc33" },
+		{ map[string]string{"test": "hello world"}, "e08e788e0c24d0fef07d84a47ec8e57474e28a8ba09c13a73ad1442d165049fb" },
+		{ struct{Str string}{"hello world"}, "1067722804f9932b9a9696ef7dc212c988f2cc74d58aba3008d45b62ab036fd1" },
+		{ struct{str string}{"hello world"}, "2271e2072f92be152a104838db7dca3cf7bd55419eb21dbe0a0713ec8f764ca9" },
+	}
+
+	testRunArgTests(sha256Fn, tests, tester)
+}
+
+func TestSha512(tester *testing.T) {
+	tests := []struct { input1, expected any } {
+		{ true, "9120cd5faef07a08e971ff024a3fcbea1e3a6b44142a6d82ca28c6c42e4f852595bcf53d81d776f10541045abdb7c37950629415d0dc66c8d86c64a5606d32de" },
+		{ "anything", "cc27d84e5fdb68439143b6143f80ba4021e4b05380ba412b3652d56ec5ef86824da18eae36caab4a2f2aaddef32dea3058848c75f3415a0ea664d847d8e94b94" },
+		{ -10, "9513a4b36d647a77c13858c6e1020d12549810cf481be796613bffd4f8ade008b1b03680db56945bb25e186a1f643aa297ab06ca4318d9b3ebc2b1b0529c473b" },
+		{ int8(10), "3c11e4f316c956a27655902dc1a19b925b8887d59eff791eea63edc8a05454ec594d5eb0f40ae151df87acd6e101761ecc5bb0d3b829bf3a85f5432493b22f37" },
+		{ uint(10), "3c11e4f316c956a27655902dc1a19b925b8887d59eff791eea63edc8a05454ec594d5eb0f40ae151df87acd6e101761ecc5bb0d3b829bf3a85f5432493b22f37" },
+		{ uint32(10), "3c11e4f316c956a27655902dc1a19b925b8887d59eff791eea63edc8a05454ec594d5eb0f40ae151df87acd6e101761ecc5bb0d3b829bf3a85f5432493b22f37" },
+		{ 10.45, "bd40229fa3cec786fff6af255e3cad67d5e32306b698e5a329be8c3d9d9361784a0adddbc4a160fc3baf1c0f717123975b919b9becef386f1dccb3b7f8303ab1" },
+		{ 1.66666666667, "6d03ffed9e655f676603c9e82e3e8748fbe2d050dbf228aa4863b2394e13b7cfa288e7c29441b3b7ad1e84e7519f2c4b6cae54cf1d4f5b7e38387ff6b0a6defa" },
+		{ []string{"hello world"}, "5b60dce05933d8182793214e7cf93dbd28e53fbb631fa812b399adf9069a49ff2560cadb0a3f9bf1792866355e802603629b308fc7b32501f7cc80cdd956301d" },
+		{ [2]string{"hello", "world"}, "89bffb15105e6863348d60e4a5acd9d1573eecef97c89f9fa7222ee63d2b9c8e1f3f756b43504f39543fa620fe82c87b56844e43463a6460cbec0643b80a51cf" },
+		{ map[string]string{"test": "hello world"}, "afdaca2d26d87b7e101f184823f3cdabfcade88d4d04fb330c6567410c74a4f8aeef6cd0638ae55ee5ae73f5dde0898a7312685a0d91e89876e76127f65a51a8" },
+		{ struct{Str string}{"hello world"}, "c9db125ae03c58f5eca61cf60a706492036b2604839aa62ba35688af9279d07255b6c5cee29236b21704b3e3330b3c580617f29b2c7b48c8ee100257d01913b7" },
+		{ struct{str string}{"hello world"}, "d77372b9c1d0e943f018ac9c7c03e6b798fc3c5de11b702eb2205ef1e26b2e3fef24448d2639e9c08c147b9bcc8adb198db90c8d6dac9284b9d0cfa8d00c084a" },
+	}
+
+	testRunArgTests(sha512Fn, tests, tester)
+}
+
 func TestSplit(tester *testing.T) {
 	tests := []struct { input1, input2, expected any } {
 		{ true, true, nil },
@@ -1315,6 +1494,17 @@ func TestSplit(tester *testing.T) {
 	}
 
 	testRunArgTests(split, tests, tester)
+}
+
+func TestStartswith(tester *testing.T) {
+	tests := []struct { input1, input2, expected any } {
+		{ true, "anything", false },
+		{ "word", "word is first", true },
+		{ input1: "dog", input2: "word is first", expected: false },
+		{ input1: "dog", input2: []string{"word is first"}, expected: false },
+	}
+
+	testRunArgTests(startswith, tests, tester)
 }
 
 func TestStripTags(tester *testing.T) {
@@ -1368,21 +1558,21 @@ func TestSubtract(tester *testing.T) {
 }
 
 func TestSuffix(tester *testing.T) {
-	tests := []struct { input1, input2, expected any } {
-		{ "suffix", 10, 10 },
-		{ true, 10, 10 },
-		{ 0, 10, 10 },
-		{ "suffix", "test", "testsuffix" },
-		{ "suffix", []string{"test"}, []string{"testsuffix"} },
-		{ "suffix", []string{"test", "strings"}, []string{"testsuffix", "stringssuffix"} },
-		{ 5, []int{10, 20}, []int{10, 20} },
-		{ "suffix", []int{10, 20}, []int{10, 20} },
-		{ 5, map[int]string{1: "val1", 2: "val2"}, map[int]string{1: "val1", 2: "val2"} },
-		{ "suffix", map[int]string{1: "val1", 2: "val2"}, map[int]string{1: "val1suffix", 2: "val2suffix"} },
-		{ 5, struct{ Str1, Str2 string }{"val1", "val2"}, struct{ Str1, Str2 string }{"val1", "val2"} },
-		{ "suffix", struct{ Str1, Str2 string }{"val1", "val2"}, struct{ Str1, Str2 string }{"val1suffix", "val2suffix"} },
-		{ 5, struct{ str1, str2 string }{"val1", "val2"}, struct{ str1, str2 string }{"val1", "val2"} },
-		{ "suffix", struct{ str1, str2 string }{"val1", "val2"}, struct{ str1, str2 string }{"", ""} },
+	tests := []struct { inputs []any; expected any } {
+		{ []any{"suffix", 10}, 10 },
+		{ []any{true, 10}, 10 },
+		{ []any{0, 10}, 10 },
+		{ []any{"suffix", "test"}, "testsuffix" },
+		{ []any{"suffix", []string{"test"}}, []string{"testsuffix"} },
+		{ []any{"suffix", []string{"test", "strings"}}, []string{"testsuffix", "stringssuffix"} },
+		{ []any{5, []int{10, 20}}, []int{10, 20} },
+		{ []any{"suffix", []int{10, 20}}, []int{10, 20} },
+		{ []any{5, map[int]string{1: "val1", 2: "val2"}}, map[int]string{1: "val1", 2: "val2"} },
+		{ []any{"suffix", map[int]string{1: "val1", 2: "val2"}}, map[int]string{1: "val1suffix", 2: "val2suffix"} },
+		{ []any{5, struct{ Str1, Str2 string }{"val1", "val2"}}, struct{ Str1, Str2 string }{"val1", "val2"} },
+		{ []any{"suffix", struct{ Str1, Str2 string }{"val1", "val2"}}, struct{ Str1, Str2 string }{"val1suffix", "val2suffix"} },
+		{ []any{5, struct{ str1, str2 string }{"val1", "val2"}}, struct{ str1, str2 string }{"val1", "val2"} },
+		{ []any{"suffix", struct{ str1, str2 string }{"val1", "val2"}}, struct{ str1, str2 string }{"", ""} },
 	}
 
 	testRunArgTests(suffix, tests, tester)

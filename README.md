@@ -2,7 +2,7 @@
 
 Package `templateManager` simplifies the use of Go's standard library `text/template` for use with HTML templates.
 
-It automates the process of choosing which files to group together for parsing (creating bundles), and builds a store of each entry template file complete with all of its dependencies. It also allows simple variables to be globally defined in the templates themselves.
+It automates the process of choosing which files to group together for parsing (creating bundles), and builds a store of each entry template file complete with all of its dependencies. It also allows simple variables to be globally defined in the templates themselves and the use of simple components.
 
 ## Contents
 
@@ -35,9 +35,9 @@ import "github.com/paul-norman/go-template-manager"
 
 `templateManager` generally just simplifies the usage of the `text/templates` package. A basic usage guide to these [Go Templates](https://pkg.go.dev/text/template) is provided [here](BASICS.md).
 
-### Extends keyword
+### `extends` keyword
 
-`templateManager` adds support for an `extends` tag to automate bundling. It allows entry files to specify which layout that they "extend" directly in the template without manually specifying all bundle files in Go (or manually including files via the built-in `template` function):
+`templateManager` adds support for an `extends` keyword to automate bundling. It allows entry files to specify which layout that they "extend" directly in the template without manually specifying all bundle files in Go *(nor manually including files via the built-in `template` function)*:
 
 ```go
 {{ extends "layouts/main.html" }}
@@ -47,18 +47,43 @@ import "github.com/paul-norman/go-template-manager"
 
 ### Variables in Templates
 
-`templateManager` adds a second new tag, `var`, to allow VERY basic variables to be defined within the templates themselves. It also allows these variables to be overridden via a simple hierarchy based on load depth:
+`templateManager` adds a second new keyword, `var`, to allow VERY basic variables to be defined within the templates themselves. It also allows these variables to be overridden via a simple hierarchy based on load depth:
 
 ```go
 {{ var "int1" }} 123 {{ end }}
 ```
 *(see [variables](#setting-variables) section for details)*
 
+### Components
+
+`templateManager` allows the user to create their own HTML-style web components to simplify their source code. For example:
+
+```html
+<Youtube id="QH2-TGUlwu4">
+```
+
+or
+
+```html
+<Tabset>
+	<x-Tab>Tab 1</x-Tab>
+	<x-TabContent>Tab 1 Content</x-TabContent>
+
+	<x-Tab>Tab 2</x-Tab>
+	<x-TabContent Checked=1>
+		Tab 2 Content
+		<Youtube id="QH2-TGUlwu4">
+	</x-TabContent>
+</Tabset>
+```
+
+*(These require a more in-depth explanation, so have been moved to their own file - see [components](COMPONENTS.md) for details)*
+
 ### Convenience Functions
 
 `templateManager` comes with a small set of convenience functions which may be used or removed.
 
-*(see [functions](#built-in-functions) section for details)*
+*(see [functions](FUNCTIONS.md) file for details)*
 
 ## Basic Usage
 
@@ -177,7 +202,7 @@ Variables can be set at various levels and load based on a hierarchy, with those
 
 Variables are still called in the code according to `text/template` syntax, i.e. `{{ .VarName }}`.
 
-### Render() Variables
+### `Render()` Variables
 
 The `Render()` method accepts a `templateManager.Params` variable as its second argument. This type is an alias to a map of type `map[string]any`.
 
@@ -352,7 +377,7 @@ It might be safer to rewrite the above test function (`add()`) using the `reflec
 
 A selection of useful functions have been created to use in the templates to compliment those already built in to `text/template`. They are documented in their own [guide](FUNCTIONS.md), quick links:
 
-[`add`](FUNCTIONS.md#add), [`capfirst`](FUNCTIONS.md#capfirst), [`collection`](FUNCTIONS.md#collection), [`contains`](FUNCTIONS.md#contains), [`cut`](FUNCTIONS.md#cut), [`date`](FUNCTIONS.md#date), [`datetime`](FUNCTIONS.md#datetime), [`default`](FUNCTIONS.md#default), [`divide`](FUNCTIONS.md#divide), [`divisibleby`](FUNCTIONS.md#divisibleby), [`dl`](FUNCTIONS.md#dl), [`equal`](FUNCTIONS.md#equal), [`first`](FUNCTIONS.md#first), [`firstof`](FUNCTIONS.md#firstof), [`formattime`](FUNCTIONS.md#formattime), [`gto`](FUNCTIONS.md#gto-greater-than), [`gte`](FUNCTIONS.md#gte-greater-than-equal), [`htmldecode`](FUNCTIONS.md#htmldecode), [`htmlencode`](FUNCTIONS.md#htmlencode), [`join`](FUNCTIONS.md#join), [`jsondecode`](FUNCTIONS.md#jsondecode), [`jsonencode`](FUNCTIONS.md#jsonencode), [`key`](FUNCTIONS.md#key), [`kind`](FUNCTIONS#kind), [`last`](FUNCTIONS.md#last), [`length`](FUNCTIONS.md#length), [`lto`](FUNCTIONS.md#lto-less-than), [`lte`](FUNCTIONS.md#lte-less-than-equal), [`localtime`](FUNCTIONS.md#localtime), [`lower`](FUNCTIONS.md#lower), [`ltrim`](FUNCTIONS.md#ltrim), [`mktime`](FUNCTIONS.md#mktime), [`multiply`](FUNCTIONS.md#multiply), [`nl2br`](FUNCTIONS.md#nl2br), [`notequal`](FUNCTIONS.md#notequal), [`now`](FUNCTIONS.md#now), [`ol`](FUNCTIONS.md#ol), [`ordinal`](FUNCTIONS.md#ordinal), [`paragraph`](FUNCTIONS.md#paragraph), [`pluralise`](FUNCTIONS.md#pluralise), [`prefix`](FUNCTIONS.md#prefix), [`random`](FUNCTIONS.md#random), [`regexp`](FUNCTIONS.md#regexp), [`regexpreplace`](FUNCTIONS.md#regexpreplace), [`replace`](FUNCTIONS.md#replace), [`round`](FUNCTIONS.md#round), [`rtrim`](FUNCTIONS.md#rtrim), [`split`](FUNCTIONS.md#split), [`striptags`](FUNCTIONS.md#striptags), [`subtract`](FUNCTIONS.md#subtract), [`suffix`](FUNCTIONS.md#suffix), [`time`](FUNCTIONS.md#time), [`timesince`](FUNCTIONS.md#timesince), [`timeuntil`](FUNCTIONS.md#timeuntil), [`title`](FUNCTIONS.md#title), [`trim`](FUNCTIONS.md#trim), [`truncate`](FUNCTIONS.md#truncate), [`truncatewords`](FUNCTIONS.md#truncatewords), [`type`](FUNCTIONS.md#type), [`ul`](FUNCTIONS.md#ul), [`upper`](FUNCTIONS.md#upper), [`urldecode`](FUNCTIONS.md#urldecode), [`urlencode`](FUNCTIONS.md#urlencode), [`wordcount`](FUNCTIONS.md#wordcount), [`wrap`](FUNCTIONS.md#wrap), [`year`](FUNCTIONS.md#year), [`yesno`](FUNCTIONS.md#yesno)
+[`add`](FUNCTIONS.md#add), [`capfirst`](FUNCTIONS.md#capfirst), [`collection`](FUNCTIONS.md#collection), [`contains`](FUNCTIONS.md#contains), [`cut`](FUNCTIONS.md#cut), [`date`](FUNCTIONS.md#date), [`datetime`](FUNCTIONS.md#datetime), [`default`](FUNCTIONS.md#default), [`divide`](FUNCTIONS.md#divide), [`divideceil`](FUNCTIONS.md#divideceil), [`dividefloor`](FUNCTIONS.md#dividefloor), [`divisibleby`](FUNCTIONS.md#divisibleby), [`dl`](FUNCTIONS.md#dl), [`endswith`](FUNCTIONS.md#endswith), [`equal`](FUNCTIONS.md#equal), [`first`](FUNCTIONS.md#first), [`firstof`](FUNCTIONS.md#firstof), [`formattime`](FUNCTIONS.md#formattime), [`gto`](FUNCTIONS.md#gto-greater-than), [`gte`](FUNCTIONS.md#gte-greater-than-equal), [`htmldecode`](FUNCTIONS.md#htmldecode), [`htmlencode`](FUNCTIONS.md#htmlencode), [`iterable`](FUNCTIONS.md#iterable), [`join`](FUNCTIONS.md#join), [`jsondecode`](FUNCTIONS.md#jsondecode), [`jsonencode`](FUNCTIONS.md#jsonencode), [`key`](FUNCTIONS.md#key), [`kind`](FUNCTIONS#kind), [`last`](FUNCTIONS.md#last), [`length`](FUNCTIONS.md#length), [`list`](FUNCTIONS.md#list), [`lto`](FUNCTIONS.md#lto-less-than), [`lte`](FUNCTIONS.md#lte-less-than-equal), [`localtime`](FUNCTIONS.md#localtime), [`lower`](FUNCTIONS.md#lower), [`ltrim`](FUNCTIONS.md#ltrim), [`md5`](FUNCTIONS.md#md5), [`mktime`](FUNCTIONS.md#mktime), [`multiply`](FUNCTIONS.md#multiply), [`nl2br`](FUNCTIONS.md#nl2br), [`notequal`](FUNCTIONS.md#notequal), [`now`](FUNCTIONS.md#now), [`ol`](FUNCTIONS.md#ol), [`ordinal`](FUNCTIONS.md#ordinal), [`paragraph`](FUNCTIONS.md#paragraph), [`pluralise`](FUNCTIONS.md#pluralise), [`prefix`](FUNCTIONS.md#prefix), [`query`](FUNCTIONS.md#query), [`random`](FUNCTIONS.md#random), [`regexp`](FUNCTIONS.md#regexp), [`regexpreplace`](FUNCTIONS.md#regexpreplace), [`render`](FUNCTIONS.md#render), [`replace`](FUNCTIONS.md#replace), [`round`](FUNCTIONS.md#round), [`rtrim`](FUNCTIONS.md#rtrim), [`sha1`](FUNCTIONS.md#sha1), [`sha256`](FUNCTIONS.md#sha256), [`sha512`](FUNCTIONS.md#sha512), [`split`](FUNCTIONS.md#split), [`startswith`](FUNCTIONS.md#startswith), [`striptags`](FUNCTIONS.md#striptags), [`subtract`](FUNCTIONS.md#subtract), [`suffix`](FUNCTIONS.md#suffix), [`time`](FUNCTIONS.md#time), [`timesince`](FUNCTIONS.md#timesince), [`timeuntil`](FUNCTIONS.md#timeuntil), [`title`](FUNCTIONS.md#title), [`trim`](FUNCTIONS.md#trim), [`truncate`](FUNCTIONS.md#truncate), [`truncatewords`](FUNCTIONS.md#truncatewords), [`type`](FUNCTIONS.md#type), [`ul`](FUNCTIONS.md#ul), [`upper`](FUNCTIONS.md#upper), [`urldecode`](FUNCTIONS.md#urldecode), [`urlencode`](FUNCTIONS.md#urlencode), [`uuid`](FUNCTIONS.md#uuid), [`wordcount`](FUNCTIONS.md#wordcount), [`wrap`](FUNCTIONS.md#wrap), [`year`](FUNCTIONS.md#year), [`yesno`](FUNCTIONS.md#yesno)
 
 They are all added by default, but can be removed if necessary *(e.g. before adding any functions of your own)*:
 

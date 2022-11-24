@@ -1,9 +1,15 @@
 package templateManager
 
 import (
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/url"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -12,6 +18,7 @@ import (
 	"unicode"
 
 	"github.com/grokify/html-strip-tags-go" // => strip
+	"github.com/google/uuid"
 )
 
 /*
@@ -28,8 +35,11 @@ func getDefaultFunctions() map[string]any {
 		"datetime":			datetime,
 		"default":			defaultVal,
 		"divide":			divide,
+		"divideceil":		divideCeil,
+		"dividefloor":		divideFloor,
 		"divisibleby":		divisibleBy,
 		"dl":				dl,
+		"endswith":			endswith,
 		"equal":			equal,
 		"first":			first,
 		"firstof":			firstOf,
@@ -38,6 +48,7 @@ func getDefaultFunctions() map[string]any {
 		"gte":				greaterThanEqual,
 		"htmldecode":		htmlDecode,
 		"htmlencode":		htmlEncode,
+		"iterable":			iterable,
 		"join":				join,
 		"jsondecode":		jsonDecode,
 		"jsonencode":		jsonEncode,
@@ -45,11 +56,13 @@ func getDefaultFunctions() map[string]any {
 		"kind":				kind,
 		"last":				last,
 		"length":			length,
+		"list":				list,
 		"lto":				lessThan,
 		"lte":				lessThanEqual,
 		"localtime":		localtime,
 		"lower":			lower,
 		"ltrim":			ltrim,
+		"md5":				md5Fn,
 		"mktime":			mktime,
 		"multiply":			multiply,
 		"nl2br":			nl2br,
@@ -60,13 +73,18 @@ func getDefaultFunctions() map[string]any {
 		"paragraph":		paragraph,
 		"pluralise":		pluralise,
 		"prefix":			prefix,
+		"query":			query, 
 		"random":			random,
 		"regexp":			regexpFindAll,
 		"regexpreplace":	regexpReplaceAll,
 		"replace":			replaceAll,
 		"round":			round,
 		"rtrim":			rtrim,
+		"sha1":				sha1Fn,
+		"sha256":			sha256Fn,
+		"sha512":			sha512Fn,
 		"split":			split,
+		"startswith":		startswith,
 		"striptags":		stripTags,
 		"subtract": 		subtract,
 		"suffix":			suffix,
@@ -78,6 +96,7 @@ func getDefaultFunctions() map[string]any {
 		"truncate":			truncate,
 		"truncatewords":	truncatewords,
 		"type":				typeFn, 
+		"uuid":				uuid.NewString,
 		"ul":				ul,
 		"upper":			upper,
 		"urldecode":		urlDecode,
@@ -435,41 +454,29 @@ func defaultVal(def reflect.Value, test reflect.Value) reflect.Value {
 
 /*
  func divide[T any](divisor int|float, value T) T
-Divides the `value` by the `divisor`.
+Divides the `value` by the `divisor` and rounds if a float to integer conversion is required.
 If `value` is a slice, array or map it will apply this conversion to any numeric elements that they contain.
 */
 func divide(divisor reflect.Value, value reflect.Value) reflect.Value {
-	sig		:= "divide(divisor int, value any)"
-	divisor	= reflectHelperUnpackInterface(divisor)
-	value	= reflectHelperUnpackInterface(value)
+	return divideHelper(reflect.ValueOf("round"), divisor, value)
+}
 
-	if !reflectHelperIsNumeric(divisor) {
-		logError(sig + fmt.Sprintf(" divisor must be numeric, not %s", value.Type()))
-		return value
-	}
+/*
+ func divideceil[T any](divisor int|float, value T) T
+Divides the `value` by the `divisor` and floors if a float to integer conversion is required.
+If `value` is a slice, array or map it will apply this conversion to any numeric elements that they contain.
+*/
+func divideCeil(divisor reflect.Value, value reflect.Value) reflect.Value {
+	return divideHelper(reflect.ValueOf("ceil"), divisor, value)
+}
 
-	div, _ := reflectHelperConvertToFloat64(divisor)
-	if div == 0.0 {
-		logError(sig + " divisor must not be zero")
-		return value
-	}
-
-	switch value.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, 
-		reflect.Uint64:
-			val, _ := reflectHelperConvertToFloat64(value)
-			op := val / div
-			return reflect.ValueOf(int64(roundFloat(op, 0))).Convert(value.Type())
-		case reflect.Float32, reflect.Float64:
-			val, _ := reflectHelperConvertToFloat64(value)
-			op := val / div
-			return reflect.ValueOf(op).Convert(value.Type())
-		case reflect.String, reflect.Bool:
-			logWarning(sig + fmt.Sprintf(" trying to divide a %s", value.Type()))
-			return value
-	}
-
-	return recursiveHelper(value, reflect.ValueOf(divide), divisor)
+/*
+ func dividefloor[T any](divisor int|float, value T) T
+Divides the `value` by the `divisor` and floors if a float to integer conversion is required.
+If `value` is a slice, array or map it will apply this conversion to any numeric elements that they contain.
+*/
+func divideFloor(divisor reflect.Value, value reflect.Value) reflect.Value {
+	return divideHelper(reflect.ValueOf("floor"), divisor, value)
 }
 
 /*
@@ -512,6 +519,34 @@ For maps this will use the keys as the dt elements.
 */
 func dl(value reflect.Value) string {
 	return listHelper(value, "dl")
+}
+
+/*
+ func endswith(find any, value any) bool
+Determines if a string ends with a certain value.
+*/
+func endswith(find reflect.Value, value reflect.Value) bool {
+	sig		:= "endswith(find any, value any)"
+	find	= reflectHelperUnpackInterface(find)
+	value	= reflectHelperUnpackInterface(value)
+
+	if !value.IsValid() {
+		return false
+	}
+
+	if find.Kind() != reflect.String {
+		logWarning(sig + " can only be used to find strings")
+		return false
+	}
+
+	switch value.Kind() {
+		case reflect.String:
+			return strings.HasSuffix(value.String(), find.String())
+		default:
+			logWarning(sig + fmt.Sprintf(" can't handle items of type %s", value.Type()))
+	}
+
+	return false
 }
 
 /*
@@ -788,16 +823,70 @@ func htmlEncode(value reflect.Value) reflect.Value {
 }
 
 /*
+ func iterable(value ...int)
+Creates an integer slice so as to spoof a `for` loop:
+ {{ range $v := iterable 5 }} -> for v := 0; v < 5; v++
+ {{ range $v := iterable 3 5 }} -> for v := 3; v < 5; v++
+ {{ range $v := iterable 3 5 2 }} -> for v := 3; v < 5; v += 2
+*/
+func iterable(values ...int) []int {
+	if len(values) < 1 {
+		return []int{}
+	}
+
+	start := 0
+	end := 1
+	increment := 1
+
+	switch len(values) {
+		case 1: 
+			end			= values[0]
+		case 2:
+			start		= values[0]
+			end			= values[1]
+		default:
+			start		= values[0]
+			end			= values[1]
+			increment	= values[2]
+	}
+
+	if increment == 0 {
+		return []int{}
+	}
+
+	if start > end && increment > 0 {
+		return []int{}
+	}
+
+	if end > start && increment < 0 {
+		return []int{}
+	}
+
+	items := []int{}
+	for i := start; i < end; i += increment {
+		items = append(items, i)
+	}
+
+	return items
+}
+
+/*
  func join(separator string, values any) string
 Joins slice or map `values` together as a string spaced by the `separator`.
 */
-func join(separator string, values reflect.Value) string {
-	sig		:= "join(separator string, values any)"
-	values	= reflectHelperUnpackInterface(values)
-	str		:= ""
+func join(separator reflect.Value, values reflect.Value) string {
+	sig			:= "join(separator string, values any)"
+	values		= reflectHelperUnpackInterface(values)
+	separator	= reflectHelperUnpackInterface(separator)
+	str			:= ""
 
 	if !values.IsValid() {
-		logError(sig + " is trying to search within an untyped nil value")
+		logError(sig + " is trying to join an untyped nil value")
+		return ""
+	}
+
+	if separator.Kind() != reflect.String {
+		logError(sig + " can only join using strings")
 		return ""
 	}
 
@@ -807,28 +896,28 @@ func join(separator string, values reflect.Value) string {
 			return fmt.Sprintf("%v", values)
 		case reflect.Array, reflect.Slice:
 			for i := 0; i < values.Len(); i++ {
-				if i > 0 { str += separator }
+				if i > 0 { str += separator.String() }
 				str += join(separator, values.Index(i))
 			}
 		case reflect.Map:
 			keys, err := reflectHelperMapSort(values)
 			if err == nil {
 				for i := 0; i < keys.Len(); i++ {
-					if i > 0 { str += separator }
+					if i > 0 { str += separator.String() }
 					str += join(separator, values.MapIndex(keys.Index(i)))
 				}
 			} else {
 				iter := values.MapRange()
 				i := 0
 				for iter.Next() {
-					if i > 0 { str += separator }
+					if i > 0 { str += separator.String() }
 					str += join(separator, iter.Value())
 					i++
 				}
 			}
 		case reflect.Struct:
 			for i := 0; i < values.NumField(); i++ {
-				if i > 0 { str += separator }
+				if i > 0 { str += separator.String() }
 				str += join(separator, values.Field(i))
 			}
 		case reflect.Invalid:
@@ -948,6 +1037,10 @@ func keyFn(input ...reflect.Value) reflect.Value {
 Returns a string representation of the reflection Kind
 */
 func kind(value reflect.Value) string {
+	if !value.IsValid() {
+		return "invalid"
+	}
+
 	return value.Kind().String()
 }
 
@@ -1102,6 +1195,14 @@ func lessThanEqual(value1 reflect.Value, value2 reflect.Value) bool {
 }
 
 /*
+ func list(values ...any) []any
+Creates a slice from any number of values
+*/
+func list(values ...reflect.Value) []reflect.Value {
+	return values
+}
+
+/*
  func localtime(location string|time.Location, t time.Time) time.Time
 Localises a time.Time object to display local times / dates.
 */
@@ -1152,6 +1253,36 @@ func ltrim(remove reflect.Value, value reflect.Value) reflect.Value {
 	}
 
 	return recursiveHelper(value, reflect.ValueOf(ltrim), remove)
+}
+
+/*
+ func md5(input any) string
+Computes an md5 hash of the input.
+*/
+func md5Fn(value reflect.Value) string {
+	sig := "md5(input any)"
+	
+	value = reflectHelperUnpackInterface(value)
+	if !value.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		hash := md5.Sum([]byte{})
+		return hex.EncodeToString(hash[:])
+	}
+
+	switch value.Kind() {
+		case reflect.String:
+			hash := md5.Sum([]byte(value.String()))
+			return hex.EncodeToString(hash[:])
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64, reflect.Bool:
+				hash := md5.Sum([]byte(fmt.Sprintf("%v", value)))
+				return hex.EncodeToString(hash[:])
+		case reflect.Slice, reflect.Array, reflect.Map, reflect.Struct:
+				hash := md5.Sum([]byte(fmt.Sprintf("%T%v", value.Interface(), value)))
+				return hex.EncodeToString(hash[:])
+	}
+
+	logError(sig + fmt.Sprintf(" values of type: %T cannot be hashed", value))
+	return ""
 }
 
 /*
@@ -1382,12 +1513,151 @@ func pluralise(values ...any) string {
 }
 
 /*
- func prefixFn[T any](prefix string, value T) T
-Prefixes all strings within `value` with `prefix`
+ func prefix[T any](prefixes ...string, value T) T
+Prefixes all strings within `value` with `prefixes` (in order)
 If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 */
-func prefix(prefixValue reflect.Value, value reflect.Value) reflect.Value {
-	return wrap(prefixValue, reflect.ValueOf(""), value)
+func prefix(values ...reflect.Value) reflect.Value {
+	sig := "prefix(suffixes ...string, value any)"
+	if len(values) < 1 {
+		logError(sig + " requires at least 2 values")
+		return reflect.ValueOf("")
+	}
+
+	if len(values) < 2 {
+		logError(sig + " requires at least 2 values")
+		return reflect.ValueOf(values[0])
+	}
+
+	prefixes	:= values[:len(values) - 1]
+	value		:= values[len(values) - 1:][0]
+	value		 = reflectHelperUnpackInterface(value)
+
+	for _, prefix := range prefixes {
+		if prefix.Kind() != reflect.String {
+			logError(sig + " can only prefix string values")
+			return value
+		}
+	}
+
+	switch value.Kind() {
+		case reflect.String:
+			str := ""
+			for _, prefix := range prefixes {
+				str += prefix.String()
+			}
+			str += value.String()
+			return reflect.ValueOf(str)
+	}
+
+	return recursiveHelper(value, reflect.ValueOf(prefix), prefixes...)
+}
+
+/*
+ func query[T any](name string, value any, link T) T 
+Adds / replaces a query parameter with `name` and `value` in the provided `link`
+If `link` is a slice, array or map it will apply this conversion to any string elements that it contains.
+*/
+func query(name reflect.Value, value reflect.Value, link reflect.Value) reflect.Value {
+	sig		:= "query(name string, value string, link any)"
+	link	= reflectHelperUnpackInterface(link)
+	name	= reflectHelperUnpackInterface(name)
+	value	= reflectHelperUnpackInterface(value)
+
+	if name.Kind() != reflect.String {
+		logError(sig + " can only append string parameter names")
+		return link
+	}
+
+	switch link.Kind() {
+		case reflect.String:
+			uri, err := url.Parse(link.String())
+			if err != nil {
+				logError(sig + " invalid URL passed: `" + link.String() + "`")
+				return reflect.ValueOf("")
+			}
+
+			query := uri.Query()
+			replaceFind := "TEMPLATE_MANAGER_QUERY_FUNCTION_REPLACE=1"
+			replaceValue := ""
+
+			// Remove the variable that we are concerned with completely
+			query.Del(name.String())
+			for k, _ := range query {
+				if strings.HasPrefix(k, name.String() + "[") {
+					query.Del(k)
+				}
+			}
+
+			switch value.Kind() {
+				case reflect.String:
+					query.Set(name.String(), value.String())
+				case reflect.Bool:
+					val, _ := reflectHelperConvertToString(value)
+					query.Set(name.String(), val)
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+					val, _ := reflectHelperConvertToString(value)
+					query.Set(name.String(), val)
+				case reflect.Float32, reflect.Float64:
+					val, _ := reflectHelperConvertToString(value)
+					query.Set(name.String(), val)
+				case reflect.Slice, reflect.Array:
+					for i := 0; i < value.Len(); i++ {
+						val, err := reflectHelperConvertToString(value.Index(i))
+						if err == nil {
+							if i > 0 {
+								replaceValue += "&"
+							}
+							replaceValue += name.String() + "[]=" + urlEncode(reflect.ValueOf(val)).String()
+						}
+					}
+				case reflect.Map:
+					iter := value.MapRange()
+					i := 0
+					for iter.Next() {
+						val, err := reflectHelperConvertToString(iter.Value())
+						if err == nil {
+							if i > 0 {
+								replaceValue += "&"
+							}
+							replaceValue += name.String() + "[" + iter.Key().String() + "]=" + urlEncode(reflect.ValueOf(val)).String()
+						}
+						i++
+					}
+				case reflect.Struct:
+					for i := 0; i < value.NumField(); i++ {
+						val, err := reflectHelperConvertToString(value.Field(i))
+						if err == nil {
+							if i > 0 {
+								replaceValue += "&"
+							}
+							replaceValue += name.String() + "[" + value.Type().Field(i).Name + "]=" + urlEncode(reflect.ValueOf(val)).String()
+						}
+					}
+			}
+
+			if len(replaceValue) > 0 {
+				query.Set("TEMPLATE_MANAGER_QUERY_FUNCTION_REPLACE", "1")
+			}
+
+			uri.RawQuery = query.Encode()
+
+			// Remove unnecessary encoding applied by the package
+			url := uri.String();
+			for k := range query {
+				if strings.Contains(k, "[") {
+					url = strings.ReplaceAll(url, urlEncode(reflect.ValueOf(k)).String(), k)
+				}
+			}
+			
+			if len(replaceValue) > 0 {
+				url = strings.ReplaceAll(url, replaceFind, replaceValue)
+			}
+
+			return reflect.ValueOf(url)
+	}
+
+	return recursiveHelper(link, reflect.ValueOf(query), name, value)
 }
 
 /*
@@ -1547,6 +1817,96 @@ func rtrim(remove reflect.Value, value reflect.Value) reflect.Value {
 }
 
 /*
+ func sha1(input any) string
+Computes an SHA1 hash of the input.
+*/
+func sha1Fn(value reflect.Value) string {
+	sig := "sha1(input any)"
+	
+	value = reflectHelperUnpackInterface(value)
+	if !value.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		hash := sha1.Sum([]byte{})
+		return hex.EncodeToString(hash[:])
+	}
+
+	switch value.Kind() {
+		case reflect.String:
+			hash := sha1.Sum([]byte(value.String()))
+			return hex.EncodeToString(hash[:])
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64, reflect.Bool:
+			hash := sha1.Sum([]byte(fmt.Sprintf("%v", value)))
+			return hex.EncodeToString(hash[:])
+		case reflect.Slice, reflect.Array, reflect.Map, reflect.Struct:
+			hash := sha1.Sum([]byte(fmt.Sprintf("%T%v", value.Interface(), value)))
+			return hex.EncodeToString(hash[:])
+	}
+
+	logError(sig + fmt.Sprintf(" values of type: %T cannot be hashed", value))
+	return ""
+}
+
+/*
+ func sha256(input any) string
+Computes an SHA256 hash of the input.
+*/
+func sha256Fn(value reflect.Value) string {
+	sig := "sha256(input any)"
+	
+	value = reflectHelperUnpackInterface(value)
+	if !value.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		hash := sha256.Sum256([]byte{})
+		return hex.EncodeToString(hash[:])
+	}
+
+	switch value.Kind() {
+		case reflect.String:
+			hash := sha256.Sum256([]byte(value.String()))
+			return hex.EncodeToString(hash[:])
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64, reflect.Bool:
+			hash := sha256.Sum256([]byte(fmt.Sprintf("%v", value)))
+			return hex.EncodeToString(hash[:])
+		case reflect.Slice, reflect.Array, reflect.Map, reflect.Struct:
+				hash := sha256.Sum256([]byte(fmt.Sprintf("%T%v", value.Interface(), value)))
+				return hex.EncodeToString(hash[:])
+	}
+
+	logError(sig + fmt.Sprintf(" values of type: %T cannot be hashed", value))
+	return ""
+}
+
+/*
+ func sha512(input any) string
+Computes an SHA512 hash of the input.
+*/
+func sha512Fn(value reflect.Value) string {
+	sig := "sha256(input any)"
+	
+	value = reflectHelperUnpackInterface(value)
+	if !value.IsValid() {
+		logWarning(sig + " values cannot be untyped nil values")
+		hash := sha512.Sum512([]byte{})
+		return hex.EncodeToString(hash[:])
+	}
+
+	switch value.Kind() {
+		case reflect.String:
+			hash := sha512.Sum512([]byte(value.String()))
+			return hex.EncodeToString(hash[:])
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64, reflect.Bool:
+			hash := sha512.Sum512([]byte(fmt.Sprintf("%v", value)))
+			return hex.EncodeToString(hash[:])
+		case reflect.Slice, reflect.Array, reflect.Map, reflect.Struct:
+				hash := sha512.Sum512([]byte(fmt.Sprintf("%T%v", value.Interface(), value)))
+				return hex.EncodeToString(hash[:])
+	}
+
+	logError(sig + fmt.Sprintf(" values of type: %T cannot be hashed", value))
+	return ""
+}
+
+/*
  func split(separator string, value string) []string
 Splits strings on the `separator` value and returns a slice of the pieces.
 */
@@ -1570,6 +1930,34 @@ func split(separator reflect.Value, value reflect.Value) reflect.Value {
 
 	//return recursiveHelper(value, reflect.ValueOf(split), separator)
 	return reflect.Value{}
+}
+
+/*
+ func startswith(find any, value any) bool
+Determines if a string ends with a certain value.
+*/
+func startswith(find reflect.Value, value reflect.Value) bool {
+	sig		:= "startswith(find any, value any)"
+	find	= reflectHelperUnpackInterface(find)
+	value	= reflectHelperUnpackInterface(value)
+
+	if !value.IsValid() {
+		return false
+	}
+
+	if find.Kind() != reflect.String {
+		logWarning(sig + " can only be used to find strings")
+		return false
+	}
+
+	switch value.Kind() {
+		case reflect.String:
+			return strings.HasPrefix(value.String(), find.String())
+		default:
+			logWarning(sig + fmt.Sprintf(" can't handle items of type %s", value.Type()))
+	}
+
+	return false
 }
 
 /*
@@ -1674,12 +2062,43 @@ func subtract(value reflect.Value, from reflect.Value) reflect.Value {
 }
 
 /*
- func suffixFn[T any](suffix string, value T) T
-Prefixes all strings within `value` with `prefix`
+ func suffix[T any](suffixes ...string, value T) T
+Suffixes all strings within `value` with `suffixes` (in order)
 If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 */
-func suffix(suffixValue reflect.Value, value reflect.Value) reflect.Value {
-	return wrap(reflect.ValueOf(""), suffixValue, value)
+func suffix(values ...reflect.Value) reflect.Value {
+	sig := "suffix(suffixes ...string, value any)"
+	if len(values) < 1 {
+		logError(sig + " requires at least 2 values")
+		return reflect.ValueOf("")
+	}
+
+	if len(values) < 2 {
+		logError(sig + " requires at least 2 values")
+		return reflect.ValueOf(values[0])
+	}
+
+	suffixes	:= values[:len(values) - 1]
+	value		:= values[len(values) - 1:][0]
+	value		 = reflectHelperUnpackInterface(value)
+
+	for _, suffix := range suffixes {
+		if suffix.Kind() != reflect.String {
+			logError(sig + " can only suffix string values")
+			return value
+		}
+	}
+
+	switch value.Kind() {
+		case reflect.String:
+			str := value.String()
+			for _, suffix := range suffixes {
+				str += suffix.String()
+			}
+			return reflect.ValueOf(str)
+	}
+
+	return recursiveHelper(value, reflect.ValueOf(suffix), suffixes...)
 }
 
 /*
@@ -2061,6 +2480,10 @@ func truncatewords(length reflect.Value, value reflect.Value) reflect.Value {
 Returns a string representation of the reflection Type
 */
 func typeFn(value reflect.Value) string {
+	if !value.IsValid() {
+		return "invalid"
+	}
+
 	return value.Type().String()
 }
 

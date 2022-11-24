@@ -138,6 +138,21 @@ func testRun3ArgTests[T reflect.Value|any](fn func(reflect.Value, reflect.Value,
 	testFormatPassFail(name, passed, failed)
 }
 
+// Runs tests with unlimited `reflect.Value` inputs and a single `reflect.Value` / interface output
+func testRunVarArgTests[T reflect.Value|any](fn func(...reflect.Value) T, tests []struct{ inputs []any; expected any }, tester *testing.T) {
+	passed, failed := 0, 0
+	for _, test := range tests {
+		if testCallVarArgs(tester, fn, test.inputs, test.expected) {
+			passed++
+		} else { failed++ }
+	}
+
+	tmp := strings.Split(runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name(), ".")
+	name := tmp[len(tmp) - 1]
+
+	testFormatPassFail(name, passed, failed)
+}
+
 // Automatically determine which tests should fun for the variables passed in
 func testRunArgTests(fn any, tests any, tester *testing.T) {
 	if real, ok := fn.(func(reflect.Value) reflect.Value); ok {
@@ -170,6 +185,8 @@ func testRunArgTests(fn any, tests any, tester *testing.T) {
 		testRun3ArgTests(real, tests.([]struct{ input1, input2, input3, expected any }), tester)
 	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) string); ok {
 		testRun3ArgTests(real, tests.([]struct{ input1, input2, input3, expected any }), tester)
+	} else if real, ok := fn.(func(...reflect.Value) reflect.Value); ok {
+		testRunVarArgTests(real, tests.([]struct{ inputs []any; expected any }), tester)
 	} else {
 		tester.Errorf("\033[31mFAIL: \033[0mTests could not run!!")	
 	}
