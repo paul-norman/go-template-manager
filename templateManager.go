@@ -700,7 +700,7 @@ func (tm *TemplateManager) getFileContents(path string, directory string) ([]str
 	content  := string(buffer)
 	contents := []string{}
 
-	findVars, _	:= regexp.Compile("(?s)\\s*" + tm.delimiterLeft + "\\s*var\\s*[\"`]{1}\\s*([^\"]+)\\s*[\"`]{1}.*?" + tm.delimiterRight + "\\s*(.*?)\\s*" + tm.delimiterLeft + "\\s*end\\s*" + tm.delimiterRight + "\\s*")
+	findVars, _	:= regexp.Compile("(?s)\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*var\\s*[\"`]{1}\\s*([^\"]+)\\s*[\"`]{1}.*?" + tm.delimiterRight + "\\s*(.*?)\\s*" + tm.delimiterLeft + "\\s*end\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
 
 	if findVars.MatchString(content) {
 		matches := findVars.FindAllStringSubmatch(content, -1)
@@ -715,7 +715,7 @@ func (tm *TemplateManager) getFileContents(path string, directory string) ([]str
 		}
 	}
 
-	findExtends, _ := regexp.Compile("^\\s*" + tm.delimiterLeft + "\\s*extends\\s*[\"`]{1}([^\"]+)[\"`]{1}.*?" + tm.delimiterRight + "\\s*")
+	findExtends, _ := regexp.Compile("^\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*extends\\s*[\"`]{1}([^\"`]+)[\"`]{1}\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
 
 	if findExtends.MatchString(content) {
 		matches := findExtends.FindAllStringSubmatch(content, -1)
@@ -740,8 +740,8 @@ func (tm *TemplateManager) getFileDependencies(path string, directory string) ([
 	dependencies := []string{}
 
 	
-	findExtends, _		:= regexp.Compile("^\\s*" + tm.delimiterLeft + "\\s*extends\\s*[\"`]{1}([^\"]+)[\"`]{1}.*" + tm.delimiterRight + "\\s*")
-	findTemplates, _	:= regexp.Compile(tm.delimiterLeft + "\\s*template\\s*[\"`]{1}([^\"]+)[\"`]{1}.*?" + tm.delimiterRight)
+	findExtends, _		:= regexp.Compile("^\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*extends\\s*[\"`]{1}([^\"`]+)[\"`]{1}\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
+	findTemplates, _	:= regexp.Compile(tm.delimiterLeft + "\\-?\\s*template\\s*[\"`]{1}([^\"`]+)[\"`]{1}.*?\\-?" + tm.delimiterRight)
 
 	if findExtends.Match(buffer) {
 		matches := findExtends.FindAllSubmatch(buffer, -1)
