@@ -67,6 +67,9 @@ type TemplateManager struct {
 // Convenience type allowing any variables types to be passed in
 type Params map[string]any
 
+// Allow regexps to be pre-compiled
+var regexps map[string]*regexp.Regexp
+
 // Creates a new `TemplateManager` struct instance
 func Init(directory string, extension string) *TemplateManager {
 	templateManager := &TemplateManager{
@@ -86,11 +89,13 @@ func Init(directory string, extension string) *TemplateManager {
 		parsed:					false,
 	}
 
+	templateManager.initRegexps()
 	templateManager.addDefaultFunctions()
 
 	return templateManager
 }
 
+// Creates a new `TemplateManager` struct instance using an embedded filesystem
 func InitEmbed(fileSystem embed.FS, directory string, extension string) *TemplateManager {
 	templateManager := &TemplateManager{
 		templates:				make(map[string]*template.Template),
@@ -110,6 +115,7 @@ func InitEmbed(fileSystem embed.FS, directory string, extension string) *Templat
 		parsed:					false,
 	}
 
+	templateManager.initRegexps()
 	templateManager.addDefaultFunctions()
 
 	return templateManager
@@ -519,6 +525,73 @@ func (tm *TemplateManager) find(file string) (*template.Template, error) {
 	return nil, fmt.Errorf("template %s not found", file) 
 }
 
+func (tm *TemplateManager) initComponentRegexps() {
+	if len(tm.components) > 0 {
+		findGeneratedDefines, _		:= regexp.Compile(`(?s)` + tm.delimiterLeft + `- define "content-([^"]{36})" -` + tm.delimiterRight + `(.+?)` + tm.delimiterLeft + `- end -` + tm.delimiterRight)
+		findCollectionComponents, _	:= regexp.Compile(`(?s)` + tm.delimiterLeft + ` ([^ ]+) x\-(render "[^ ]+-([^"]{36})" \(collection "ComponentUuid" .*?)` + tm.delimiterRight)
+
+		regexps["findGeneratedDefines"]		= findGeneratedDefines
+		regexps["findCollectionComponents"] = findCollectionComponents
+
+		for component := range tm.components {
+			findComponentsDouble, _				:= regexp.Compile(`(?s)<` + component + `(\s+[^>]*)?\s*>(.*?)</` + component + `>`)
+			findComponentsSingle, _				:= regexp.Compile(`(?s)<` + component + `(\s+[^>]*)?\s*>`)
+			findComponentsCollectedDouble, _	:= regexp.Compile(`(?s)<x-` + component + `(\s+[^>]*)?\s*>(.*?)</x-` + component + `>`)
+			findComponentsCollectedSingle, _	:= regexp.Compile(`(?s)<x-` + component + `(\s+[^>]*)?\s*>`)
+
+			regexps[component + "_findComponentsDouble"]				= findComponentsDouble
+			regexps[component + "_findComponentsSingle"]				= findComponentsSingle
+			regexps[component + "_findComponentsCollectedDouble"]	= findComponentsCollectedDouble
+			regexps[component + "_findComponentsCollectedSingle"]	= findComponentsCollectedSingle
+		}
+	}
+}
+
+func (tm *TemplateManager) initRegexps() {
+	findVars, _					:= regexp.Compile("(?s)\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*var\\s*[\"`]{1}\\s*([^\"]+)\\s*[\"`]{1}.*?" + tm.delimiterRight + "\\s*(.*?)\\s*" + tm.delimiterLeft + "\\s*end\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
+	findExtends, _				:= regexp.Compile("^\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*extends\\s*[\"`]{1}([^\"`]+)[\"`]{1}\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
+	findTemplates, _			:= regexp.Compile(tm.delimiterLeft + "\\-?\\s*template\\s*[\"`]{1}([^\"`]+)[\"`]{1}.*?\\-?" + tm.delimiterRight)
+	findAttributes, _			:= regexp.Compile(`(?s)([^=\s]+)\s*=\s*("[^"]+"|[\d\.\-]+)`)
+	
+	// `var` related
+	findNumericSlice, _			:= regexp.Compile(`\s*([\-\d\.]+)\s*,`)
+	findBooleanSlice, _			:= regexp.Compile(`(?i)\s*(true|false)\s*,`)
+	findStringSlice, _			:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	findSliceSlice, _			:= regexp.Compile(`(\[.*?\])\s*,`)
+	findBoolBoolMap, _			:= regexp.Compile(`(?i)(true|false)\s*:\s*(true|false)\s*,`)
+	findBoolNumericMap, _		:= regexp.Compile(`(?i)(true|false)\s*:\s*([\-\.\d]+)\s*,`)
+	findBoolStringMap, _		:= regexp.Compile("(?i)(true|false)\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	findNumericBoolMap, _		:= regexp.Compile(`(?i)([\-\.\d]+)\s*:\s*(true|false)\s*,`)
+	findNumericNumericMap, _	:= regexp.Compile(`([\-\.\d]+)\s*:\s*([\-\.\d]+)\s*,`)
+	findNumericStringMap, _		:= regexp.Compile("([\\-\\.\\d]+)\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	findStringBoolMap, _		:= regexp.Compile("(?i)[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(true|false)\\s*,")
+	findStringNumericMap, _		:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*([\\-\\.\\d]+)\\s*,")
+	findStringStringMap, _		:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	findSliceMap, _				:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(\\[.*?\\])\\s*,")
+
+	regexps = map[string]*regexp.Regexp{
+		"findVars":					findVars,
+		"findExtends":				findExtends,
+		"findTemplates":			findTemplates,
+		"findAttributes":			findAttributes,
+
+		"findNumericSlice":			findNumericSlice,
+		"findBooleanSlice":			findBooleanSlice,
+		"findStringSlice":			findStringSlice,
+		"findSliceSlice":			findSliceSlice,
+		"findBoolBoolMap":			findBoolBoolMap,
+		"findBoolNumericMap":		findBoolNumericMap,
+		"findBoolStringMap":		findBoolStringMap,
+		"findNumericBoolMap":		findNumericBoolMap, 
+		"findNumericNumericMap":	findNumericNumericMap,
+		"findNumericStringMap":		findNumericStringMap,
+		"findStringBoolMap":		findStringBoolMap, 
+		"findStringNumericMap":		findStringNumericMap,
+		"findStringStringMap":		findStringStringMap,
+		"findSliceMap":				findSliceMap,
+	}
+}
+
 // Re-parses an individual template file (if reload is enabled)
 func (tm *TemplateManager) reParseIndividualTemplate(path string) error {
 	name, err := cleanPath(path, tm.directory)
@@ -574,11 +647,13 @@ func (tm *TemplateManager) parseComponents() error {
 		}
 	}
 
+	tm.initComponentRegexps()
+
 	if err == nil {
 		tm.parsed = true
 
 		if tm.debug {
-			logSuccess("All templates parsed and ready to use")
+			logSuccess("All components parsed and ready to use")
 		}
 	}
 
@@ -700,10 +775,8 @@ func (tm *TemplateManager) getFileContents(path string, directory string) ([]str
 	content  := string(buffer)
 	contents := []string{}
 
-	findVars, _	:= regexp.Compile("(?s)\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*var\\s*[\"`]{1}\\s*([^\"]+)\\s*[\"`]{1}.*?" + tm.delimiterRight + "\\s*(.*?)\\s*" + tm.delimiterLeft + "\\s*end\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
-
-	if findVars.MatchString(content) {
-		matches := findVars.FindAllStringSubmatch(content, -1)
+	if regexps["findVars"].MatchString(content) {
+		matches := regexps["findVars"].FindAllStringSubmatch(content, -1)
 		name, _ := cleanPath(path, directory)
 
 		for _, match := range matches {
@@ -715,10 +788,8 @@ func (tm *TemplateManager) getFileContents(path string, directory string) ([]str
 		}
 	}
 
-	findExtends, _ := regexp.Compile("^\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*extends\\s*[\"`]{1}([^\"`]+)[\"`]{1}\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
-
-	if findExtends.MatchString(content) {
-		matches := findExtends.FindAllStringSubmatch(content, -1)
+	if regexps["findExtends"].MatchString(content) {
+		matches := regexps["findExtends"].FindAllStringSubmatch(content, -1)
 		content = strings.Replace(content, matches[0][0], "", 1)
 		contents, err = tm.getFileContents(directory + "/" + matches[0][1], directory)
 		if err != nil {
@@ -739,17 +810,13 @@ func (tm *TemplateManager) getFileDependencies(path string, directory string) ([
 	}
 	dependencies := []string{}
 
-	
-	findExtends, _		:= regexp.Compile("^\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*extends\\s*[\"`]{1}([^\"`]+)[\"`]{1}\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
-	findTemplates, _	:= regexp.Compile(tm.delimiterLeft + "\\-?\\s*template\\s*[\"`]{1}([^\"`]+)[\"`]{1}.*?\\-?" + tm.delimiterRight)
-
-	if findExtends.Match(buffer) {
-		matches := findExtends.FindAllSubmatch(buffer, -1)
+	if regexps["findExtends"].Match(buffer) {
+		matches := regexps["findExtends"].FindAllSubmatch(buffer, -1)
 		dependencies = append(dependencies, directory + "/" + string(matches[0][1]))
 	}
 
-	if findTemplates.Match(buffer) {
-		matches := findTemplates.FindAllSubmatch(buffer, -1)
+	if regexps["findTemplates"].Match(buffer) {
+		matches := regexps["findTemplates"].FindAllSubmatch(buffer, -1)
 		for _, match := range matches {
 			dependencies = append(dependencies, directory + "/" + string(match[1]))
 		}
@@ -774,26 +841,22 @@ func (tm *TemplateManager) getFileDependencies(path string, directory string) ([
 
 func (tm *TemplateManager) parseContentComponents(content string, directory string) string {
 	if len(tm.components) > 0 {
-		findAttributes, _ := regexp.Compile(`(?s)([^=\s]+)\s*=\s*("[^"]+"|[\d\.\-]+)`)
-
 		for component, componentPath := range tm.components {
 			if strings.Contains(content, "<" + component) {	
 				matches := [][]string{}
-				findComponents, _ := regexp.Compile(`(?s)<` + component + `(\s+[^>]*)?\s*>(.*?)</` + component + `>`)
 
-				if findComponents.MatchString(content) {
-					matches = findComponents.FindAllStringSubmatch(content, -1)
+				if regexps[component + "_findComponentsDouble"].MatchString(content) {
+					matches = regexps[component + "_findComponentsDouble"].FindAllStringSubmatch(content, -1)
 				} else {
-					findComponents, _ = regexp.Compile(`(?s)<` + component + `(\s+[^>]*)?\s*>`)
-					if findComponents.MatchString(content) {
-						matches = findComponents.FindAllStringSubmatch(content, -1)
+					if regexps[component + "_findComponentsSingle"].MatchString(content) {
+						matches = regexps[component + "_findComponentsSingle"].FindAllStringSubmatch(content, -1)
 					}
 				}
 
 				for _, match := range matches {
-					random_id := uuid.NewString()
-					find := match[0]
-					replace := tm.delimiterLeft + ` block "` + componentPath + `-` + random_id + `"`
+					random_id	:= uuid.NewString()
+					find		:= match[0]
+					replace		:= tm.delimiterLeft + ` block "` + componentPath + `-` + random_id + `"`
 					
 					attributes := match[1]
 					tagContent := ""
@@ -803,7 +866,7 @@ func (tm *TemplateManager) parseContentComponents(content string, directory stri
 					
 					replace += ` collection "ComponentUuid" "` + random_id + `" "ComponentContent" "content-` + random_id + `"`
 					if len(attributes) > 0 {
-						attributes := findAttributes.FindAllStringSubmatch(attributes, -1)
+						attributes := regexps["findAttributes"].FindAllStringSubmatch(attributes, -1)
 						for _, attribute := range attributes {
 							bias := "numeric"
 							if strings.HasPrefix(attribute[2], `"`) {
@@ -843,20 +906,18 @@ func (tm *TemplateManager) parseContentComponents(content string, directory stri
 			}
 			if strings.Contains(content, "<x-" + component) {	
 				matches := [][]string{}
-				findComponents, _ := regexp.Compile(`(?s)<x-` + component + `(\s+[^>]*)?\s*>(.*?)</x-` + component + `>`)
 
-				if findComponents.MatchString(content) {
-					matches = findComponents.FindAllStringSubmatch(content, -1)
+				if regexps[component + "_findComponentsCollectedDouble"].MatchString(content) {
+					matches = regexps[component + "_findComponentsCollectedDouble"].FindAllStringSubmatch(content, -1)
 				} else {
-					findComponents, _ = regexp.Compile(`(?s)<x-` + component + `(\s+[^>]*)?\s*>`)
-					if findComponents.MatchString(content) {
-						matches = findComponents.FindAllStringSubmatch(content, -1)
+					if regexps[component + "_findComponentsCollectedSingle"].MatchString(content) {
+						matches = regexps[component + "_findComponentsCollectedSingle"].FindAllStringSubmatch(content, -1)
 					}
 				}
 				for _, match := range matches {
-					random_id := uuid.NewString()
-					find := match[0]
-					define := tm.delimiterLeft + ` define "` + componentPath + `-` + random_id + `"`
+					random_id	:= uuid.NewString()
+					find		:= match[0]
+					define		:= tm.delimiterLeft + ` define "` + componentPath + `-` + random_id + `"`
 					
 					attributes := match[1]
 					tagContent := ""
@@ -866,7 +927,7 @@ func (tm *TemplateManager) parseContentComponents(content string, directory stri
 					
 					create := `(collection "ComponentUuid" "` + random_id + `" "ComponentContent" "content-` + random_id + `"`
 					if len(attributes) > 0 {
-						attributes := findAttributes.FindAllStringSubmatch(attributes, -1)
+						attributes := regexps["findAttributes"].FindAllStringSubmatch(attributes, -1)
 						for _, attribute := range attributes {
 							bias := "numeric"
 							if strings.HasPrefix(attribute[2], `"`) {
@@ -907,29 +968,24 @@ func (tm *TemplateManager) parseContentComponents(content string, directory stri
 		}
 
 		// Collect nested components
-		if strings.Contains(content, `x-render "`) {
-			// TODO - (.+?(?:x\-render).+?)
-			findGeneratedDefines, _ := regexp.Compile(`(?s)` + tm.delimiterLeft + `- define "content-([^"]{36})" -` + tm.delimiterRight + `(.+?)` + tm.delimiterLeft + `- end -` + tm.delimiterRight)
-			findCollectionComponents, _ := regexp.Compile(`(?s)` + tm.delimiterLeft + ` ([^ ]+) x\-(render "[^ ]+-([^"]{36})" \(collection "ComponentUuid" .*?)` + tm.delimiterRight)
-			
-			if findGeneratedDefines.MatchString(content) {
-				matches := findGeneratedDefines.FindAllStringSubmatch(content, -1)
+		if strings.Contains(content, `x-render "`) {			
+			if regexps["findGeneratedDefines"].MatchString(content) {
+				matches := regexps["findGeneratedDefines"].FindAllStringSubmatch(content, -1)
 				for _, match := range matches {
 					// Individual component content definition to act upon
 					if strings.Contains(match[2], `x-render`) {
-						collectedVars := map[string][]string{}
+						collectedVars	:= map[string][]string{}
+						wholeDefine		:= match[0]
+						newDefine		:= match[0]
+						defineId		:= match[1]
+						defineContents	:= match[2]
 
-						wholeDefine := match[0]
-						newDefine := match[0]
-						defineId := match[1]
-						defineContents := match[2]
-
-						if findCollectionComponents.MatchString(defineContents) {
-							submatches := findCollectionComponents.FindAllStringSubmatch(defineContents, -1)
+						if regexps["findCollectionComponents"].MatchString(defineContents) {
+							submatches := regexps["findCollectionComponents"].FindAllStringSubmatch(defineContents, -1)
 							for _, submatch := range submatches {
-								wholeComponent := submatch[0]
-								componentName := submatch[1]
-								componentRender := submatch[2]
+								wholeComponent	:= submatch[0]
+								componentName	:= submatch[1]
+								componentRender	:= submatch[2]
 
 								if _, ok := collectedVars[componentName]; !ok {
 									collectedVars[componentName] = []string{}
@@ -947,8 +1003,9 @@ func (tm *TemplateManager) parseContentComponents(content string, directory stri
 						if findParentDefine.MatchString(content) {
 							submatches := findParentDefine.FindAllStringSubmatch(content, -1)
 							for _, submatch := range submatches {
-								wholeMaster := submatch[0]
-								collected := submatch[1]
+								wholeMaster	:= submatch[0]
+								collected	:= submatch[1]
+
 								for varName, slice := range collectedVars {
 									collected += ` "` + varName + `" (list`
 									for _, value := range slice {

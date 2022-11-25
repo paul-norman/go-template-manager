@@ -5,7 +5,6 @@ Functions dedicated to the parsing of variables embedded in templates (as string
 */
 
 import (
-	"regexp"
 	"strings"
 	"strconv"
 )
@@ -96,19 +95,8 @@ func prepareMap(value string) map[string]string {
 	value = value + ","
 	m := make(map[string]string)
 
-	findStringStringMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
-	if findStringStringMap.MatchString(value) {
-		matches := findStringStringMap.FindAllStringSubmatch(value, -1)
-		for _, match := range matches {
-			m[match[1]] = match[2]
-		}
-
-		return m
-	}
-	
-	findStringNumericMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*([\\-\\.\\d]+)\\s*,")
-	if findStringNumericMap.MatchString(value) {
-		matches := findStringNumericMap.FindAllStringSubmatch(value, -1)
+	if regexps["findStringStringMap"].MatchString(value) {
+		matches := regexps["findStringStringMap"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			m[match[1]] = match[2]
 		}
@@ -116,9 +104,17 @@ func prepareMap(value string) map[string]string {
 		return m
 	}
 
-	findStringBoolMap, _ := regexp.Compile("(?i)[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(true|false)\\s*,")
-	if findStringBoolMap.MatchString(value) {
-		matches := findStringBoolMap.FindAllStringSubmatch(value, -1)
+	if regexps["findStringNumericMap"].MatchString(value) {
+		matches := regexps["findStringNumericMap"].FindAllStringSubmatch(value, -1)
+		for _, match := range matches {
+			m[match[1]] = match[2]
+		}
+
+		return m
+	}
+
+	if regexps["findStringBoolMap"].MatchString(value) {
+		matches := regexps["findStringBoolMap"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			m[match[1]] = strings.ToLower(match[2])
 		}
@@ -126,9 +122,8 @@ func prepareMap(value string) map[string]string {
 		return m
 	}
 
-	findNumericStringMap, _ := regexp.Compile("([\\-\\.\\d]+)\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
-	if findNumericStringMap.MatchString(value) {
-		matches := findNumericStringMap.FindAllStringSubmatch(value, -1)
+	if regexps["findNumericStringMap"].MatchString(value) {
+		matches := regexps["findNumericStringMap"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			m[match[1]] = match[2]
 		}
@@ -136,9 +131,8 @@ func prepareMap(value string) map[string]string {
 		return m
 	}
 
-	findNumericNumericMap, _ := regexp.Compile(`([\-\.\d]+)\s*:\s*([\-\.\d]+)\s*,`)
-	if findNumericNumericMap.MatchString(value) {
-		matches := findNumericNumericMap.FindAllStringSubmatch(value, -1)
+	if regexps["findNumericNumericMap"].MatchString(value) {
+		matches := regexps["findNumericNumericMap"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			m[match[1]] = match[2]
 		}
@@ -146,9 +140,8 @@ func prepareMap(value string) map[string]string {
 		return m
 	}
 
-	findNumericBoolMap, _ := regexp.Compile(`(?i)([\-\.\d]+)\s*:\s*(true|false)\s*,`)
-	if findNumericBoolMap.MatchString(value) {
-		matches := findNumericBoolMap.FindAllStringSubmatch(value, -1)
+	if regexps["findNumericBoolMap"].MatchString(value) {
+		matches := regexps["findNumericBoolMap"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			m[match[1]] = strings.ToLower(match[2])
 		}
@@ -156,9 +149,8 @@ func prepareMap(value string) map[string]string {
 		return m
 	}
 
-	findBoolStringMap, _ := regexp.Compile("(?i)(true|false)\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
-	if findBoolStringMap.MatchString(value) {
-		matches := findBoolStringMap.FindAllStringSubmatch(value, -1)
+	if regexps["findBoolStringMap"].MatchString(value) {
+		matches := regexps["findBoolStringMap"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			m[strings.ToLower(match[1])] = match[2]
 		}
@@ -166,9 +158,8 @@ func prepareMap(value string) map[string]string {
 		return m
 	}
 
-	findBoolNumericMap, _ := regexp.Compile(`(?i)(true|false)\s*:\s*([\-\.\d]+)\s*,`)
-	if findBoolNumericMap.MatchString(value) {
-		matches := findBoolNumericMap.FindAllStringSubmatch(value, -1)
+	if regexps["findBoolNumericMap"].MatchString(value) {
+		matches := regexps["findBoolNumericMap"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			m[strings.ToLower(match[1])] = match[2]
 		}
@@ -176,9 +167,8 @@ func prepareMap(value string) map[string]string {
 		return m
 	}
 
-	findBoolBoolMap, _ := regexp.Compile(`(?i)(true|false)\s*:\s*(true|false)\s*,`)
-	if findBoolBoolMap.MatchString(value) {
-		matches := findBoolBoolMap.FindAllStringSubmatch(value, -1)
+	if regexps["findBoolBoolMap"].MatchString(value) {
+		matches := regexps["findBoolBoolMap"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			m[strings.ToLower(match[1])] = strings.ToLower(match[2])
 		}
@@ -187,10 +177,8 @@ func prepareMap(value string) map[string]string {
 	}
 
 	/* 
-	findSliceMap, _ := regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(\\[.*?\\])\\s*,")
-
-	if findSliceMap.MatchString(value) {
-		matches := findSliceMap.FindAllStringSubmatch(value, -1)
+	if regexps["findSliceMap"].MatchString(value) {
+		matches := regexps["findSliceMap"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			m[match[1]] = match[2] 
 		}
@@ -205,9 +193,8 @@ func prepareBooleanSlice(value string) []string {
 	value = value + ","
 	slice := []string{}
 
-	findBooleanSlice, _	:= regexp.Compile(`(?i)\s*(true|false)\s*,`)
-	if findBooleanSlice.MatchString(value) {
-		matches := findBooleanSlice.FindAllStringSubmatch(value, -1)
+	if regexps["findBooleanSlice"].MatchString(value) {
+		matches := regexps["findBooleanSlice"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			slice = append(slice, strings.ToLower(match[1]))
 		}
@@ -221,9 +208,8 @@ func prepareNumericSlice(value string) []string {
 	value = value + ","
 	slice := []string{}
 
-	findNumericSlice, _	:= regexp.Compile(`\s*([\-\d\.]+)\s*,`)
-	if findNumericSlice.MatchString(value) {
-		matches := findNumericSlice.FindAllStringSubmatch(value, -1)
+	if regexps["findNumericSlice"].MatchString(value) {
+		matches := regexps["findNumericSlice"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			slice = append(slice, match[1])
 		}
@@ -257,10 +243,8 @@ func prepareSliceSlice(value string) []string {
 	value = value + ","
 	slice := []string{}
 
-	findSliceSlice, _ := regexp.Compile(`(\[.*?\])\s*,`)
-
-	if findSliceSlice.MatchString(value) {
-		matches := findSliceSlice.FindAllStringSubmatch(value, -1)
+	if regexps["findSliceSlice"].MatchString(value) {
+		matches := regexps["findSliceSlice"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			slice = append(slice, match[1])
 		}
@@ -274,11 +258,8 @@ func prepareStringSlice(value string) []string {
 	value = value + ","
 	slice := []string{}
 
-	// No back-references in GoLang's RE2 regexp engine :-(
-	findStringSlice, _	:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
-
-	if findStringSlice.MatchString(value) {
-		matches := findStringSlice.FindAllStringSubmatch(value, -1)
+	if regexps["findStringSlice"].MatchString(value) {
+		matches := regexps["findStringSlice"].FindAllStringSubmatch(value, -1)
 		for _, match := range matches {
 			val := strings.Replace(match[1], "\\`", "`", -1)
 			val = strings.Replace(val, `\"`, `"`, -1)

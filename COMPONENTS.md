@@ -144,7 +144,7 @@ It is likely that the `Tab` items will need to be wrapped as will the `TabConten
 </Tabset>
 ```
 
-Now there will be two extra variables available to the parent template `.Tab` and `.TabContent` which will contain a string slice of the rendered templates in the order that they were defined.
+Now there will be two extra variables available to the parent template `.Tab` and `.TabContent` *(in this example)* which will contain a string slice of the rendered templates in the order that they were defined.
 
 This could now be re-written as:
 
@@ -162,6 +162,6 @@ and function identically.
 
 In addition to all standard data passed to these collected, nested templates, they are also assigned two additional variables: `.ParentUuid` and `.ParentPosition`.
 
-`.ParentUuid` is the uuid of the parent component, and `.ParentPosition` is the index that the specific component occupies in the string slice passed to the parent component *(e.g. the position of the item within the `.Tab` slice)*.
+`.ParentUuid` is the uuid of the parent component, and `.ParentPosition` is the index that the specific component occupies in the string slice passed to the parent component *(i.e. the position of the item within the `.Tab` slice)*.
 
 These variables should allow tricks such as the CSS checkbox hack to be implemented without assigning names / ids to all nested items, keeping the code as clean as possible.
