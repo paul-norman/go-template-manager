@@ -797,11 +797,62 @@ func reflectHelperConvertToString(value reflect.Value) (string, error) {
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 			stringValue = strconv.Itoa(int(value.Uint()))
 		case reflect.Float32, reflect.Float64:
-			stringValue = fmt.Sprintf("%f", value.Float())
+			stringValue = fmt.Sprintf("%v", value.Float())
 		case reflect.Bool:
 			stringValue = fmt.Sprintf("%v", value.Bool())
 		case reflect.String:
 			stringValue = value.String()
+		case reflect.Invalid:
+			return "", fmt.Errorf("can't convert type nil to a string")
+		default:
+			return "", fmt.Errorf("can't convert type %s to a string", value.Type())
+	}
+
+	return stringValue, nil
+}
+
+/*
+Converts a `reflect.Value` to a `string` if possible flattening out slices, arrays, maps etc.
+*/
+func reflectHelperConvertAnythingToString(value reflect.Value) (string, error) {
+	var stringValue string
+
+	switch value.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			stringValue = strconv.Itoa(int(value.Int()))
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			stringValue = strconv.Itoa(int(value.Uint()))
+		case reflect.Float32, reflect.Float64:
+			stringValue = fmt.Sprintf("%v", value.Float())
+		case reflect.Bool:
+			stringValue = fmt.Sprintf("%v", value.Bool())
+		case reflect.String:
+			stringValue = value.String()
+		case reflect.Slice, reflect.Array:
+			stringValue = ""
+			for i := 0; i < value.Len(); i++ {
+				val, err := reflectHelperConvertAnythingToString(value.Index(i))
+				if err == nil {
+					stringValue += val
+				}
+			}
+		case reflect.Map:
+			stringValue = ""
+			iter := value.MapRange()
+			for iter.Next() {
+				val, err := reflectHelperConvertAnythingToString(iter.Value())
+				if err == nil {
+					stringValue += val
+				}
+			}
+		case reflect.Struct:
+			stringValue = ""
+			for i := 0; i < value.NumField(); i++ {
+				val, err := reflectHelperConvertAnythingToString(value.Field(i))
+				if err == nil {
+					stringValue += val
+				}
+			}
 		case reflect.Invalid:
 			return "", fmt.Errorf("can't convert type nil to a string")
 		default:

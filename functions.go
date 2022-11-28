@@ -29,6 +29,7 @@ func getDefaultFunctions() map[string]any {
 		"add":				add,
 		"capfirst":			capfirst,
 		"collection":		collection, 
+		"concat":			concat,
 		"contains":			contains,
 		"cut":				cut,
 		"date":				date,
@@ -264,6 +265,30 @@ func collection(pairs ...any) map[string]any {
 	}
 
 	return collection
+}
+
+/*
+ func concat(values ...any) string
+Concatenates any number of string-able values together in the order that they were declared.
+*/
+func concat(values ...reflect.Value) reflect.Value {
+	sig := "concat(values ...any)"
+	if len(values) < 1 {
+		logError(sig + " requires at least 1 value")
+		return reflect.ValueOf("")
+	}
+
+	ret := ""
+
+	for _, value := range values {
+		value = reflectHelperUnpackInterface(value)
+		val, err := reflectHelperConvertAnythingToString(value)
+		if err == nil {
+			ret += val
+		}
+	}
+
+	return reflect.ValueOf(ret)
 }
 
 /*

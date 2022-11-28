@@ -74,6 +74,18 @@ func TestCollection(tester *testing.T) {
 	testRunTests("collection", tests, tester)
 }
 
+func TestConcat(tester *testing.T) {
+	tests := []struct { inputs []any; expected any } {
+		{ []any{2, "string", 1.2345}, "2string1.2345" },
+		{ []any{true, "string", []string{"one", "two"}}, "truestringonetwo" },
+		{ []any{[]float64{1.23, 4.56}, "string", [][]string{{"one", "two"}, {"three"}}}, "1.234.56stringonetwothree" },
+		{ []any{map[int]string{1: "one", 2: "two", 3: "three"}}, "onetwothree" },
+		{ []any{struct{ num1, num2 string}{"one", "two"}}, "onetwo" },
+	}
+
+	testRunArgTests(concat, tests, tester)
+}
+
 func TestContains(tester *testing.T) {
 	tests := []struct { input1, input2, expected any } {
 		{ "world", "hello world", true },
