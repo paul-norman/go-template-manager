@@ -761,6 +761,12 @@ func reflectHelperConvertToFloat64(value reflect.Value) (float64, error) {
 			floatValue = float64(int64(value.Uint()))
 		case reflect.Float32, reflect.Float64:
 			floatValue = value.Float()
+		case reflect.Bool:
+			if value.Bool() {
+				floatValue = float64(1)
+			} else {
+				floatValue = float64(0)
+			}
 		case reflect.String:
 			str := value.String()
 			var err error

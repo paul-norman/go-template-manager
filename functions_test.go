@@ -1756,6 +1756,103 @@ func TestTitle(tester *testing.T) {
 	testRunArgTests(title, tests, tester)
 }
 
+func TestToBool(tester *testing.T) {
+	tests := []struct { input1, expected any } {
+		{ 0, false },
+		{ 1, true },
+		{ 12, true },
+		{ -47, false },
+		{ "0", false },
+		{ "1", true },
+		{ "5", false },
+		{ "true", true },
+		{ "yes", true },
+		{ "y", true },
+		{ "-795", false },
+		{ -7.95, false },
+		{ 0.2, false },
+		{ 2.2, true },
+		{ true, true },
+		{ false, false },
+		{ "string", false },
+		{ []string{"string"}, false },
+		{ []int{123}, false },
+		{ map[int]string{1: "string"}, false },
+		{ struct{ name string }{"string"}, false },
+	}
+
+	testRunArgTests(toBool, tests, tester)
+}
+
+func TestToFloat(tester *testing.T) {
+	tests := []struct { input1, expected any } {
+		{ 0, 0.0 },
+		{ 1, 1.0},
+		{ 12, 12.0 },
+		{ -47, -47.0 },
+		{ "0", 0.0 },
+		{ "1", 1.0 },
+		{ "-795", -795.0 },
+		{ -7.95, -7.95 },
+		{ 2.2, 2.2 },
+		{ true, 1.0 },
+		{ false, 0.0 },
+		{ "string", 0.0 },
+		{ []string{"string"}, 0.0 },
+		{ []int{123}, 0.0 },
+		{ map[int]string{1: "string"}, 0.0 },
+		{ struct{ name string }{"string"}, 0.0 },
+	}
+
+	testRunArgTests(toFloat, tests, tester)
+}
+
+func TestToInt(tester *testing.T) {
+	tests := []struct { input1, expected any } {
+		{ 0, 0 },
+		{ 1, 1 },
+		{ 12, 12 },
+		{ -47, -47 },
+		{ "0", 0 },
+		{ "1", 1 },
+		{ "-795", -795 },
+		{ -7.95, -8 },
+		{ 2.2, 2 },
+		{ true, 1 },
+		{ false, 0 },
+		{ "string", 0 },
+		{ []string{"string"}, 0 },
+		{ []int{123}, 0 },
+		{ map[int]string{1: "string"}, 0 },
+		{ struct{ name string }{"string"}, 0 },
+	}
+
+	testRunArgTests(toInt, tests, tester)
+}
+
+func TestToString(tester *testing.T) {
+	tests := []struct { input1, expected any } {
+		{ 0, "0" },
+		{ 1, "1" },
+		{ 12, "12" },
+		{ -47, "-47" },
+		{ "0", "0" },
+		{ "1", "1" },
+		{ "-795", "-795" },
+		{ -7.95, "-7.95" },
+		{ 2.2, "2.2" },
+		{ true, "true" },
+		{ false, "false" },
+		{ "string", "string" },
+		{ []string{"string"}, "" },
+		{ []int{123}, "" },
+		{ map[int]string{1: "string"}, "" },
+		{ struct{ name string }{"string"}, "" },
+	}
+
+	testRunArgTests(toString, tests, tester)
+}
+
 func TestTrim(tester *testing.T) {
 	tests := []struct { input1, input2, expected any } {
 		{ true, true, true },

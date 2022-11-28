@@ -27,6 +27,7 @@ Returns a function map for use with the Go template standard library
 func getDefaultFunctions() map[string]any {
 	return map[string]any{
 		"add":				add,
+		"bool":				toBool,
 		"capfirst":			capfirst,
 		"collection":		collection, 
 		"concat":			concat,
@@ -44,11 +45,13 @@ func getDefaultFunctions() map[string]any {
 		"equal":			equal,
 		"first":			first,
 		"firstof":			firstOf,
+		"float":			toFloat,
 		"formattime":		formattime,
 		"gto":				greaterThan,
 		"gte":				greaterThanEqual,
 		"htmldecode":		htmlDecode,
 		"htmlencode":		htmlEncode,
+		"int":				toInt,
 		"iterable":			iterable,
 		"join":				join,
 		"jsondecode":		jsonDecode,
@@ -86,6 +89,7 @@ func getDefaultFunctions() map[string]any {
 		"sha512":			sha512Fn,
 		"split":			split,
 		"startswith":		startswith,
+		"string":			toString,
 		"striptags":		stripTags,
 		"substr":			substr,
 		"subtract": 		subtract,
@@ -2283,6 +2287,94 @@ func title(value reflect.Value) reflect.Value {
 	}
 
 	return recursiveHelper(value, reflect.ValueOf(title))
+}
+
+/*
+ func toBool(value any) int
+Attempts to convert any `value` to a boolean. If this is impossible, the nil value (false) will be returned.
+*/
+func toBool(value reflect.Value) bool {
+	sig := "bool(value any)"
+	value = reflectHelperUnpackInterface(value)
+
+	switch value.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64, reflect.Bool, reflect.String:
+			val, err := reflectHelperConvertToBool(value)
+			if err != nil {
+				logWarning(sig + fmt.Sprintf(" could not convert %T with value: `%v` to a bool", value.Interface(), value))
+				return false
+			}
+			return val
+	}
+
+	logError(sig + fmt.Sprintf(" can only convert simple types to booleans, not a %T", value.Interface()))
+	return false
+}
+
+/*
+ func toFloat(value any) float64
+Attempts to convert any `value` to a float64. If this is impossible, the nil value (0.0) will be returned.
+*/
+func toFloat(value reflect.Value) float64 {
+	sig := "float(value any)"
+	value = reflectHelperUnpackInterface(value)
+
+	switch value.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64, reflect.Bool, reflect.String:
+			val, err := reflectHelperConvertToFloat64(value)
+			if err != nil {
+				logWarning(sig + fmt.Sprintf(" could not convert %T with value: `%v` to a float", value.Interface(), value))
+				return 0.0
+			}
+			return val
+	}
+
+	logError(sig + fmt.Sprintf(" can only convert simple types to floats, not a %T", value.Interface()))
+	return 0.0
+}
+
+/*
+ func toInt(value any) int
+Attempts to convert any `value` to an integer. If this is impossible, the nil value (0) will be returned.
+*/
+func toInt(value reflect.Value) int {
+	sig := "int(value any)"
+	value = reflectHelperUnpackInterface(value)
+
+	switch value.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64, reflect.Bool, reflect.String:
+			val, err := reflectHelperConvertToInt(value)
+			if err != nil {
+				logWarning(sig + fmt.Sprintf(" could not convert %T with value: `%v` to an int", value.Interface(), value))
+				return 0
+			}
+			return val
+	}
+
+	logError(sig + fmt.Sprintf(" can only convert simple types to integers, not a %T", value.Interface()))
+	return 0
+}
+
+/*
+ func toString(value any) string
+Attempts to convert any `value` to a string. If this is impossible, the nil value ("") will be returned.
+*/
+func toString(value reflect.Value) string {
+	sig := "string(value any)"
+	value = reflectHelperUnpackInterface(value)
+
+	switch value.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64, reflect.Bool, reflect.String:
+			val, err := reflectHelperConvertToString(value)
+			if err != nil {
+				logWarning(sig + fmt.Sprintf(" could not convert %T with value: `%v` to a string", value.Interface(), value))
+				return ""
+			}
+			return val
+	}
+
+	logError(sig + fmt.Sprintf(" can only convert simple types to strings, not a %T", value.Interface()))
+	return ""
 }
 
 /*

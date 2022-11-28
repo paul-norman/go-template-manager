@@ -2,7 +2,7 @@
 
 All functions in `templateManager` accept their principle argument **last** to allow simple chaining. *Efforts have been made to output clear errors and return suitable empty values rather than cause panics (a problem in several `text/template` functions)*.
 
-Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`concat`](#concat), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divideceil`](#divideceil), [`dividefloor`](#dividefloor), [`divisibleby`](#divisibleby), [`dl`](#dl), [`endswith`](#endswith), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`gto`](#gto-greater-than), [`gte`](#gte-greater-than-equal), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`iterable`](#iterable), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`list`](#list), [`lto`](#lto-less-than), [`lte`](#lte-less-than-equal), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`md5`](#md5), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`query`](#query), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`render`](#render), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`sha1`](#sha1), [`sha256`](#sha256), [`sha512`](#sha512), [`split`](#split), [`startswith`](#startswith), [`striptags`](#striptags), [`substr`](#substr), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`uuid`](#uuid), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
+Contents: [`add`](#add), [`bool`](#bool), [`capfirst`](#capfirst), [`collection`](#collection), [`concat`](#concat), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divideceil`](#divideceil), [`dividefloor`](#dividefloor), [`divisibleby`](#divisibleby), [`dl`](#dl), [`endswith`](#endswith), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`float`](#float), [`formattime`](#formattime), [`gto`](#gto-greater-than), [`gte`](#gte-greater-than-equal), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`int`](#int), [`iterable`](#iterable), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`list`](#list), [`lto`](#lto-less-than), [`lte`](#lte-less-than-equal), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`md5`](#md5), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`query`](#query), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`render`](#render), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`sha1`](#sha1), [`sha256`](#sha256), [`sha512`](#sha512), [`split`](#split), [`startswith`](#startswith), [`string`](#string), [`striptags`](#striptags), [`substr`](#substr), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`uuid`](#uuid), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
 
 ## `add`
 
@@ -63,6 +63,31 @@ Returns new variable of the original `to` data type.
 <!-- APPEND - map values must be of the same type as added element -->
 <!-- Maps: .Test is ["first": 1, "second": 2], .Add is ["third": 3, "fourth": 4] -->
 {{ add .Add .Test }} <!-- ["first": 1, "second": 2, "third": 3, "fourth": 4] -->
+```
+
+## `bool`
+
+```go
+func bool(value any) bool
+```
+
+Attempts to convert any `value` to a boolean. If this is impossible, the nil value (false) will be returned. Positive integers (> 0) and floats (>= 1) are treated as true, as are several string values: "true", "1", "yes", "y". More complex types area always false.
+
+```django
+{{ bool "yes" }}
+<!-- true -->
+
+{{ bool 0 }}
+<!-- false -->
+
+{{ bool 1 }}
+<!-- true -->
+
+{{ bool 10 }}
+<!-- true -->
+
+{{ bool -1.23 }}
+<!-- false -->
 ```
 
 ## `capfirst`
@@ -519,6 +544,28 @@ Accepts any number of values and returns the first one of them that exists and i
 {{ firstof .Empty "" 0 .NotEmpty .AlsoEmpty }} <!-- .NotEmpty -->
 ```
 
+## `float`
+
+```go
+func float(value any) float64
+```
+
+Attempts to convert any `value` to a float64. If this is impossible, the nil value (0.0) will be returned. More complex types are always 0.0.
+
+```django
+{{ float "3" }}
+<!-- 3.0 -->
+
+{{ float 1 }}
+<!-- 1.0 -->
+
+{{ float true }}
+<!-- 1.0 -->
+
+{{ float -1.23 }}
+<!-- -1.23 -->
+```
+
 ## `formattime`
 
 ```go
@@ -602,6 +649,31 @@ Returns new variable of the original `value` data type.
 ```
 
 *(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`html`](BASICS.md#html) function)*
+
+## `int`
+
+```go
+func int(value any) int
+```
+
+Attempts to convert any `value` to an int. Floats will be rounded. If conversion is impossible, the nil value (0) will be returned. More complex types are always 0.
+
+```django
+{{ int "3" }}
+<!-- 3 -->
+
+{{ int 1 }}
+<!-- 1 -->
+
+{{ int true }}
+<!-- 1 -->
+
+{{ int 4.67 }}
+<!-- 5 -->
+
+{{ int -1.23 }}
+<!-- -1 -->
+```
 
 ## `iterable`
 
@@ -1346,6 +1418,22 @@ Tests whether a string `value` starts with another string, `find`. Returns false
 <!-- OR more idiomatically...  -->
 {{ if "the quick brown fox" | startswith "the" }} starts with the {{ end }}
 <!-- starts with the -->
+```
+
+## `string`
+
+```go
+func string(value any) int
+```
+
+Attempts to convert any `value` to a string. If conversion is impossible, the nil value ("") will be returned. More complex types are always "".
+
+```django
+{{ string "3" }}
+<!-- 3 -->
+
+{{ string 3 }}
+<!-- 3 -->
 ```
 
 ## `striptags`
