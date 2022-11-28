@@ -2,7 +2,7 @@
 
 All functions in `templateManager` accept their principle argument **last** to allow simple chaining. *Efforts have been made to output clear errors and return suitable empty values rather than cause panics (a problem in several `text/template` functions)*.
 
-Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divideceil`](#divideceil), [`dividefloor`](#dividefloor), [`divisibleby`](#divisibleby), [`dl`](#dl), [`endswith`](#endswith), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`gto`](#gto-greater-than), [`gte`](#gte-greater-than-equal), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`iterable`](#iterable), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`list`](#list), [`lto`](#lto-less-than), [`lte`](#lte-less-than-equal), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`md5`](#md5), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`query`](#query), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`render`](#render), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`sha1`](#sha1), [`sha256`](#sha256), [`sha512`](#sha512), [`split`](#split), [`startswith`](#startswith), [`striptags`](#striptags), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`uuid`](#uuid), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
+Contents: [`add`](#add), [`capfirst`](#capfirst), [`collection`](#collection), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divideceil`](#divideceil), [`dividefloor`](#dividefloor), [`divisibleby`](#divisibleby), [`dl`](#dl), [`endswith`](#endswith), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`formattime`](#formattime), [`gto`](#gto-greater-than), [`gte`](#gte-greater-than-equal), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`iterable`](#iterable), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`list`](#list), [`lto`](#lto-less-than), [`lte`](#lte-less-than-equal), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`md5`](#md5), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`query`](#query), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`render`](#render), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`sha1`](#sha1), [`sha256`](#sha256), [`sha512`](#sha512), [`split`](#split), [`startswith`](#startswith), [`striptags`](#striptags), [`substr`](#substr), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`uuid`](#uuid), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
 
 ## `add`
 
@@ -1344,6 +1344,29 @@ Returns new variable of the original `value` data type.
 ```django
 {{ striptags "<p>Remove <strong>all</strong> HTML tags</p>" }}
 <!-- Remove all HTML tags -->
+```
+
+## `substr`
+
+```go
+func substr[T any](offset int, length int, value T) T
+```
+
+Extracts a substring from a `value` starting at the specified `offset` and including `length` runes from that point. If `length` is zero, the substring will be taken to the end of the `value`. If `length` is negative, it is the number of runes from the end of the `value`.
+
+If `value` is a slice, array or map it will apply this conversion to any valid elements that they contain.
+
+Returns new variable of the original `value` data type.
+
+```django
+{{ substr 3 13 "<p>Remove P Tags</p>" }}
+<!-- Remove P Tags -->
+
+{{ "<p>Remove P Tags</p>" | substr 3 -4 }}
+<!-- Remove P Tags -->
+
+{{ "Do nothing" | substr 3 0 }}
+<!-- nothing -->
 ```
 
 ## `subtract`

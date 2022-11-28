@@ -1265,11 +1265,11 @@ func TestPrefix(tester *testing.T) {
 		{ []any{"prefix", []string{"test", "strings"}}, []string{"prefixtest", "prefixstrings"} },
 		{ []any{5, []int{10, 20}}, []int{10, 20} },
 		{ []any{"prefix", []int{10, 20}}, []int{10, 20} },
-		{ []any{5, map[int]string{1: "val1", 2: "val2"}}, map[int]string{1: "val1", 2: "val2"} },
+		{ []any{5, map[int]string{1: "val1", 2: "val2"}}, map[int]string{1: "5val1", 2: "5val2"} },
 		{ []any{"prefix", map[int]string{1: "val1", 2: "val2"}}, map[int]string{1: "prefixval1", 2: "prefixval2"} },
-		{ []any{5, struct{ Str1, Str2 string }{"val1", "val2"}}, struct{ Str1, Str2 string }{"val1", "val2"} },
+		{ []any{5, struct{ Str1, Str2 string }{"val1", "val2"}}, struct{ Str1, Str2 string }{"5val1", "5val2"} },
 		{ []any{"prefix", struct{ Str1, Str2 string }{"val1", "val2"}}, struct{ Str1, Str2 string }{"prefixval1", "prefixval2"} },
-		{ []any{5, struct{ str1, str2 string }{"val1", "val2"}}, struct{ str1, str2 string }{"val1", "val2"} },
+		{ []any{5, struct{ str1, str2 string }{"val1", "val2"}}, struct{ str1, str2 string }{"", ""} },
 		{ []any{"prefix", struct{ str1, str2 string }{"val1", "val2"}}, struct{ str1, str2 string }{"", ""} },
 	}
 
@@ -1526,6 +1526,23 @@ func TestStripTags(tester *testing.T) {
 	testRunArgTests(stripTags, tests, tester)
 }
 
+func TestSubstr(tester *testing.T) {
+	tests := []struct { input1, input2, input3, expected any } {
+		{ 2, 3, 12345, 345 },
+		{ 2, 3, 1.2345, 234.0 },
+		{ 2, 3, 12.345, 0.34 },
+		{ 0, 2, 1.2345, 1.0 },
+		{ 2, 3, "hello world", "llo" },
+		{ 2, 0, "hello world", "llo world" },
+		{ 2, -3, "hello world", "llo wo" },
+		{ 2, 50, "hello world", "llo world" },
+		{ 1, 2, "世界世界世界", "界世" },
+		{ 2, 3, []string{"hello", "world"}, []string{"llo", "rld"} },
+	}
+
+	testRunArgTests(substr, tests, tester)
+}
+
 func TestSubtract(tester *testing.T) {
 	tests := []struct { input1, input2, expected any } {
 		{ false, true, true },
@@ -1567,11 +1584,11 @@ func TestSuffix(tester *testing.T) {
 		{ []any{"suffix", []string{"test", "strings"}}, []string{"testsuffix", "stringssuffix"} },
 		{ []any{5, []int{10, 20}}, []int{10, 20} },
 		{ []any{"suffix", []int{10, 20}}, []int{10, 20} },
-		{ []any{5, map[int]string{1: "val1", 2: "val2"}}, map[int]string{1: "val1", 2: "val2"} },
+		{ []any{5, map[int]string{1: "val1", 2: "val2"}}, map[int]string{1: "val15", 2: "val25"} },
 		{ []any{"suffix", map[int]string{1: "val1", 2: "val2"}}, map[int]string{1: "val1suffix", 2: "val2suffix"} },
-		{ []any{5, struct{ Str1, Str2 string }{"val1", "val2"}}, struct{ Str1, Str2 string }{"val1", "val2"} },
+		{ []any{5, struct{ Str1, Str2 string }{"val1", "val2"}}, struct{ Str1, Str2 string }{"val15", "val25"} },
 		{ []any{"suffix", struct{ Str1, Str2 string }{"val1", "val2"}}, struct{ Str1, Str2 string }{"val1suffix", "val2suffix"} },
-		{ []any{5, struct{ str1, str2 string }{"val1", "val2"}}, struct{ str1, str2 string }{"val1", "val2"} },
+		{ []any{5, struct{ str1, str2 string }{"val1", "val2"}}, struct{ str1, str2 string }{"", ""} },
 		{ []any{"suffix", struct{ str1, str2 string }{"val1", "val2"}}, struct{ str1, str2 string }{"", ""} },
 	}
 
@@ -1937,11 +1954,11 @@ func TestWrap(tester *testing.T) {
 		{ "prefix", "suffix", []string{"test", "strings"}, []string{"prefixtestsuffix", "prefixstringssuffix"} },
 		{ "prefix", 5, []int{10, 20}, []int{10, 20} },
 		{ "prefix", "suffix", []int{10, 20}, []int{10, 20} },
-		{ "prefix", 5, map[int]string{1: "val1", 2: "val2"}, map[int]string{1: "val1", 2: "val2"} },
+		{ "prefix", 5, map[int]string{1: "val1", 2: "val2"}, map[int]string{1: "prefixval15", 2: "prefixval25"} },
 		{ "prefix", "suffix", map[int]string{1: "val1", 2: "val2"}, map[int]string{1: "prefixval1suffix", 2: "prefixval2suffix"} },
-		{ "prefix", 5, struct{ Str1, Str2 string }{"val1", "val2"}, struct{ Str1, Str2 string }{"val1", "val2"} },
+		{ "prefix", 5, struct{ Str1, Str2 string }{"val1", "val2"}, struct{ Str1, Str2 string }{"prefixval15", "prefixval25"} },
 		{ "prefix", "suffix", struct{ Str1, Str2 string }{"val1", "val2"}, struct{ Str1, Str2 string }{"prefixval1suffix", "prefixval2suffix"} },
-		{ "prefix", 5, struct{ str1, str2 string }{"val1", "val2"}, struct{ str1, str2 string }{"val1", "val2"} },
+		{ "prefix", 5, struct{ str1, str2 string }{"val1", "val2"}, struct{ str1, str2 string }{"", ""} },
 		{ "prefix", "suffix", struct{ str1, str2 string }{"val1", "val2"}, struct{ str1, str2 string }{"", ""} },
 	}
 

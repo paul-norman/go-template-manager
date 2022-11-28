@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 /*
@@ -460,6 +461,160 @@ func reflectHelperCleanSliceIndex(index reflect.Value, length int) (int, error) 
 }
 
 /*
+Converts the underlying type to another and returns a `reflect.Value` for it
+Only works with simple types (i.e. numbers / bools / strings)
+*/
+func reflectHelperConvertUnderlying(value reflect.Value, to reflect.Kind) (reflect.Value, error) {
+	t := value.Kind()
+	if t == to {
+		return value, nil
+	}
+
+	switch to {
+		case reflect.Bool:
+			bool, err := reflectHelperConvertToBool(value)
+			return reflect.ValueOf(bool), err
+		case reflect.Int:
+			num, err := reflectHelperConvertToInt(value)
+			return reflect.ValueOf(num), err
+		case reflect.Int8:
+			num, err := reflectHelperConvertToInt8(value)
+			return reflect.ValueOf(num), err
+		case reflect.Int16:
+			num, err := reflectHelperConvertToInt16(value)
+			return reflect.ValueOf(num), err
+		case reflect.Int32:
+			num, err := reflectHelperConvertToInt32(value)
+			return reflect.ValueOf(num), err
+		case reflect.Int64:
+			num, err := reflectHelperConvertToInt64(value)
+			return reflect.ValueOf(num), err
+		case reflect.Uint:
+			num, err := reflectHelperConvertToUint(value)
+			return reflect.ValueOf(num), err
+		case reflect.Uint8:
+			num, err := reflectHelperConvertToUint8(value)
+			return reflect.ValueOf(num), err
+		case reflect.Uint16:
+			num, err := reflectHelperConvertToUint16(value)
+			return reflect.ValueOf(num), err
+		case reflect.Uint32:
+			num, err := reflectHelperConvertToUint32(value)
+			return reflect.ValueOf(num), err
+		case reflect.Uint64:
+			num, err := reflectHelperConvertToUint64(value)
+			return reflect.ValueOf(num), err
+		case reflect.Float32:
+			float, err := reflectHelperConvertToFloat32(value)
+			return reflect.ValueOf(float), err
+		case reflect.Float64:
+			float, err := reflectHelperConvertToFloat64(value)
+			return reflect.ValueOf(float), err
+		case reflect.String:
+			str, err := reflectHelperConvertToString(value)
+			return reflect.ValueOf(str), err
+		case reflect.Slice:
+			switch t {
+				case reflect.Bool:
+					slice, err := reflectHelperConvertToSlice[bool](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Int:
+					slice, err := reflectHelperConvertToSlice[int](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Int8:
+					slice, err := reflectHelperConvertToSlice[int8](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Int16:
+					slice, err := reflectHelperConvertToSlice[int16](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Int32:
+					slice, err := reflectHelperConvertToSlice[int32](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Int64:
+					slice, err := reflectHelperConvertToSlice[int64](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Uint:
+					slice, err := reflectHelperConvertToSlice[uint](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Uint8:
+					slice, err := reflectHelperConvertToSlice[uint8](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Uint16:
+					slice, err := reflectHelperConvertToSlice[uint16](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Uint32:
+					slice, err := reflectHelperConvertToSlice[uint32](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Uint64:
+					slice, err := reflectHelperConvertToSlice[uint64](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Float32:
+					slice, err := reflectHelperConvertToSlice[float32](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Float64:
+					slice, err := reflectHelperConvertToSlice[float64](value)
+					return reflect.ValueOf(slice), err
+				case reflect.String:
+					slice, err := reflectHelperConvertToSlice[string](value)
+					return reflect.ValueOf(slice), err
+				case reflect.Array:
+					slice, err := reflectHelperConvertArrayToSlice(value)
+					return reflect.ValueOf(slice), err
+			}	
+		case reflect.Array:
+			switch t {
+				case reflect.Bool:
+					array, err := reflectHelperConvertToArray[bool](value)
+					return reflect.ValueOf(array), err
+				case reflect.Int:
+					array, err := reflectHelperConvertToArray[int](value)
+					return reflect.ValueOf(array), err
+				case reflect.Int8:
+					array, err := reflectHelperConvertToArray[int8](value)
+					return reflect.ValueOf(array), err
+				case reflect.Int16:
+					array, err := reflectHelperConvertToArray[int16](value)
+					return reflect.ValueOf(array), err
+				case reflect.Int32:
+					array, err := reflectHelperConvertToArray[int32](value)
+					return reflect.ValueOf(array), err
+				case reflect.Int64:
+					array, err := reflectHelperConvertToArray[int64](value)
+					return reflect.ValueOf(array), err
+				case reflect.Uint:
+					array, err := reflectHelperConvertToArray[uint](value)
+					return reflect.ValueOf(array), err
+				case reflect.Uint8:
+					array, err := reflectHelperConvertToArray[uint8](value)
+					return reflect.ValueOf(array), err
+				case reflect.Uint16:
+					array, err := reflectHelperConvertToArray[uint16](value)
+					return reflect.ValueOf(array), err
+				case reflect.Uint32:
+					array, err := reflectHelperConvertToArray[uint32](value)
+					return reflect.ValueOf(array), err
+				case reflect.Uint64:
+					array, err := reflectHelperConvertToArray[uint64](value)
+					return reflect.ValueOf(array), err
+				case reflect.Float32:
+					array, err := reflectHelperConvertToArray[float32](value)
+					return reflect.ValueOf(array), err
+				case reflect.Float64:
+					array, err := reflectHelperConvertToArray[float64](value)
+					return reflect.ValueOf(array), err
+				case reflect.String:
+					array, err := reflectHelperConvertToArray[string](value)
+					return reflect.ValueOf(array), err
+				case reflect.Slice:
+					array, err := reflectHelperConvertSliceToArray(value)
+					return reflect.ValueOf(array), err
+			}
+	}
+
+	return reflect.Value{}, fmt.Errorf("could not convert value of type: %v to type: %v", t, to)
+}
+
+/*
 Converts a `reflect.Value` to an `int64` if possible.
 */
 func reflectHelperConvertToInt64(value reflect.Value) (int64, error) {
@@ -492,6 +647,38 @@ func reflectHelperConvertToInt64(value reflect.Value) (int64, error) {
 	}
 
 	return intValue, nil
+}
+
+/*
+Converts a `reflect.Value` to an `int` if possible.
+*/
+func reflectHelperConvertToInt(value reflect.Value) (int, error) {
+	intValue, err := reflectHelperConvertToInt64(value)
+	return int(intValue), err
+}
+
+/*
+Converts a `reflect.Value` to an `int32` if possible.
+*/
+func reflectHelperConvertToInt32(value reflect.Value) (int32, error) {
+	intValue, err := reflectHelperConvertToInt64(value)
+	return int32(intValue), err
+}
+
+/*
+Converts a `reflect.Value` to an `int16` if possible.
+*/
+func reflectHelperConvertToInt16(value reflect.Value) (int16, error) {
+	intValue, err := reflectHelperConvertToInt64(value)
+	return int16(intValue), err
+}
+
+/*
+Converts a `reflect.Value` to an `int8` if possible.
+*/
+func reflectHelperConvertToInt8(value reflect.Value) (int8, error) {
+	intValue, err := reflectHelperConvertToInt64(value)
+	return int8(intValue), err
 }
 
 /*
@@ -538,11 +725,27 @@ func reflectHelperConvertToUint(value reflect.Value) (uint, error) {
 }
 
 /*
-Converts a `reflect.Value` to an `int` if possible.
+Converts a `reflect.Value` to a `uint32` if possible.
 */
-func reflectHelperConvertToInt(value reflect.Value) (int, error) {
-	intValue, err := reflectHelperConvertToInt64(value)
-	return int(intValue), err
+func reflectHelperConvertToUint32(value reflect.Value) (uint32, error) {
+	intValue, err := reflectHelperConvertToUint64(value)
+	return uint32(intValue), err
+}
+
+/*
+Converts a `reflect.Value` to a `uint16` if possible.
+*/
+func reflectHelperConvertToUint16(value reflect.Value) (uint16, error) {
+	intValue, err := reflectHelperConvertToUint64(value)
+	return uint16(intValue), err
+}
+
+/*
+Converts a `reflect.Value` to a `uint8` if possible.
+*/
+func reflectHelperConvertToUint8(value reflect.Value) (uint8, error) {
+	intValue, err := reflectHelperConvertToUint64(value)
+	return uint8(intValue), err
 }
 
 /*
@@ -575,6 +778,14 @@ func reflectHelperConvertToFloat64(value reflect.Value) (float64, error) {
 }
 
 /*
+Converts a `reflect.Value` to a `float32` if possible.
+*/
+func reflectHelperConvertToFloat32(value reflect.Value) (float32, error) {
+	floatValue, err := reflectHelperConvertToFloat64(value)
+	return float32(floatValue), err
+}
+
+/*
 Converts a `reflect.Value` to a `string` if possible.
 */
 func reflectHelperConvertToString(value reflect.Value) (string, error) {
@@ -598,6 +809,88 @@ func reflectHelperConvertToString(value reflect.Value) (string, error) {
 	}
 
 	return stringValue, nil
+}
+
+/*
+Converts a `reflect.Value` to a `bool` if possible.
+*/
+func reflectHelperConvertToBool(value reflect.Value) (bool, error) {
+	switch value.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if value.Int() > 0 {
+				return true, nil
+			}
+			return false, nil
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			if value.Uint() > 0 {
+				return true, nil
+			}
+			return false, nil
+		case reflect.Float32, reflect.Float64:
+			if value.Float() >= 1 {
+				return true, nil
+			}
+			return false, nil
+		case reflect.Bool:
+			return value.Bool(), nil
+		case reflect.String:
+			str := strings.ToLower(value.String())
+			if str == "true" || str == "1" || str == "t" || str == "y" || str == "yes" {
+				return true, nil
+			} else if str == "false" || str == "0" || str == "f" || str == "n" || str == "no" {
+				return false, nil
+			}
+			return false, fmt.Errorf("can't convert unknown string value to a bool")
+		case reflect.Invalid:
+			return false, fmt.Errorf("can't convert type nil to a bool")
+		default:
+			return false, fmt.Errorf("can't convert type %s to a bool", value.Type())
+	}
+}
+
+/*
+Converts a simple `reflect.Value` to a `slice` if possible.
+*/
+func reflectHelperConvertToSlice[T int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|string|bool](value reflect.Value) ([]T, error) {
+	val, ok := value.Interface().(T)
+
+	if !ok {
+		return []T{}, fmt.Errorf("cannot convert type %T to a slice", value.Interface())
+	}
+
+	return []T{val}, nil
+}
+
+/*
+Converts a simple `reflect.Value` to an `array` if possible.
+*/
+func reflectHelperConvertToArray[T int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|string|bool](value reflect.Value) ([1]T, error) {
+	val, ok := value.Interface().(T)
+
+	if !ok {
+		return [1]T{}, fmt.Errorf("cannot convert type %T to an array", value.Interface())
+	}
+
+	return [1]T{val}, nil
+}
+
+/*
+Converts an `array` to a `slice`.
+*/
+func reflectHelperConvertArrayToSlice(array reflect.Value) (reflect.Value, error) {
+	if array.Kind() != reflect.Array {
+		return reflect.Value{}, fmt.Errorf("can't convert a type %s to a slice", array.Type())
+	}
+
+	t := array.Type().Elem()
+	t = reflect.SliceOf(t)
+	slice := reflect.New(t).Elem()
+
+	for i := 0; i < array.Len(); i++ {
+		slice.Index(i).Set(array.Index(i))
+	}
+
+	return slice, nil
 }
 
 /*

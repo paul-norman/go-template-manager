@@ -10,6 +10,8 @@ func TestAAParseVariablesSetup(tester  *testing.T) {
 	logErrors			= false
 	logWarnings			= false
 
+	initRegexps()
+
 	testFormatTitle("parseVariables")
 }
 

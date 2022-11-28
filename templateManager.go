@@ -89,6 +89,7 @@ func Init(directory string, extension string) *TemplateManager {
 		parsed:					false,
 	}
 
+	initRegexps()
 	templateManager.initRegexps()
 	templateManager.addDefaultFunctions()
 
@@ -115,6 +116,7 @@ func InitEmbed(fileSystem embed.FS, directory string, extension string) *Templat
 		parsed:					false,
 	}
 
+	initRegexps()
 	templateManager.initRegexps()
 	templateManager.addDefaultFunctions()
 
@@ -551,45 +553,10 @@ func (tm *TemplateManager) initRegexps() {
 	findVars, _					:= regexp.Compile("(?s)\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*var\\s*[\"`]{1}\\s*([^\"]+)\\s*[\"`]{1}.*?" + tm.delimiterRight + "\\s*(.*?)\\s*" + tm.delimiterLeft + "\\s*end\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
 	findExtends, _				:= regexp.Compile("^\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*extends\\s*[\"`]{1}([^\"`]+)[\"`]{1}\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
 	findTemplates, _			:= regexp.Compile(tm.delimiterLeft + "\\-?\\s*template\\s*[\"`]{1}([^\"`]+)[\"`]{1}.*?\\-?" + tm.delimiterRight)
-	findAttributes, _			:= regexp.Compile(`(?s)([^=\s]+)\s*=\s*("[^"]+"|[\d\.\-]+)`)
-	
-	// `var` related
-	findNumericSlice, _			:= regexp.Compile(`\s*([\-\d\.]+)\s*,`)
-	findBooleanSlice, _			:= regexp.Compile(`(?i)\s*(true|false)\s*,`)
-	findStringSlice, _			:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
-	findSliceSlice, _			:= regexp.Compile(`(\[.*?\])\s*,`)
-	findBoolBoolMap, _			:= regexp.Compile(`(?i)(true|false)\s*:\s*(true|false)\s*,`)
-	findBoolNumericMap, _		:= regexp.Compile(`(?i)(true|false)\s*:\s*([\-\.\d]+)\s*,`)
-	findBoolStringMap, _		:= regexp.Compile("(?i)(true|false)\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
-	findNumericBoolMap, _		:= regexp.Compile(`(?i)([\-\.\d]+)\s*:\s*(true|false)\s*,`)
-	findNumericNumericMap, _	:= regexp.Compile(`([\-\.\d]+)\s*:\s*([\-\.\d]+)\s*,`)
-	findNumericStringMap, _		:= regexp.Compile("([\\-\\.\\d]+)\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
-	findStringBoolMap, _		:= regexp.Compile("(?i)[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(true|false)\\s*,")
-	findStringNumericMap, _		:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*([\\-\\.\\d]+)\\s*,")
-	findStringStringMap, _		:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
-	findSliceMap, _				:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(\\[.*?\\])\\s*,")
 
-	regexps = map[string]*regexp.Regexp{
-		"findVars":					findVars,
-		"findExtends":				findExtends,
-		"findTemplates":			findTemplates,
-		"findAttributes":			findAttributes,
-
-		"findNumericSlice":			findNumericSlice,
-		"findBooleanSlice":			findBooleanSlice,
-		"findStringSlice":			findStringSlice,
-		"findSliceSlice":			findSliceSlice,
-		"findBoolBoolMap":			findBoolBoolMap,
-		"findBoolNumericMap":		findBoolNumericMap,
-		"findBoolStringMap":		findBoolStringMap,
-		"findNumericBoolMap":		findNumericBoolMap, 
-		"findNumericNumericMap":	findNumericNumericMap,
-		"findNumericStringMap":		findNumericStringMap,
-		"findStringBoolMap":		findStringBoolMap, 
-		"findStringNumericMap":		findStringNumericMap,
-		"findStringStringMap":		findStringStringMap,
-		"findSliceMap":				findSliceMap,
-	}
+	regexps["findVars"]			= findVars
+	regexps["findExtends"]		= findExtends
+	regexps["findTemplates"]	= findTemplates
 }
 
 // Re-parses an individual template file (if reload is enabled)
@@ -1136,6 +1103,43 @@ func (tm *TemplateManager) parseVariableSlice(template string, name string, valu
 				case "string":
 					tm.AddParam(template, name, parseNestedVariableSlice[string](values))
 			}
+	}
+}
+
+func initRegexps() {
+	findAttributes, _			:= regexp.Compile(`(?s)([^=\s]+)\s*=\s*("[^"]+"|[\d\.\-]+)`)
+	findNumericSlice, _			:= regexp.Compile(`\s*([\-\d\.]+)\s*,`)
+	findBooleanSlice, _			:= regexp.Compile(`(?i)\s*(true|false)\s*,`)
+	findStringSlice, _			:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	findSliceSlice, _			:= regexp.Compile(`(\[.*?\])\s*,`)
+	findBoolBoolMap, _			:= regexp.Compile(`(?i)(true|false)\s*:\s*(true|false)\s*,`)
+	findBoolNumericMap, _		:= regexp.Compile(`(?i)(true|false)\s*:\s*([\-\.\d]+)\s*,`)
+	findBoolStringMap, _		:= regexp.Compile("(?i)(true|false)\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	findNumericBoolMap, _		:= regexp.Compile(`(?i)([\-\.\d]+)\s*:\s*(true|false)\s*,`)
+	findNumericNumericMap, _	:= regexp.Compile(`([\-\.\d]+)\s*:\s*([\-\.\d]+)\s*,`)
+	findNumericStringMap, _		:= regexp.Compile("([\\-\\.\\d]+)\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	findStringBoolMap, _		:= regexp.Compile("(?i)[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(true|false)\\s*,")
+	findStringNumericMap, _		:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*([\\-\\.\\d]+)\\s*,")
+	findStringStringMap, _		:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*,")
+	findSliceMap, _				:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(\\[.*?\\])\\s*,")
+
+	regexps = map[string]*regexp.Regexp{
+		"findAttributes":			findAttributes,
+
+		"findNumericSlice":			findNumericSlice,
+		"findBooleanSlice":			findBooleanSlice,
+		"findStringSlice":			findStringSlice,
+		"findSliceSlice":			findSliceSlice,
+		"findBoolBoolMap":			findBoolBoolMap,
+		"findBoolNumericMap":		findBoolNumericMap,
+		"findBoolStringMap":		findBoolStringMap,
+		"findNumericBoolMap":		findNumericBoolMap, 
+		"findNumericNumericMap":	findNumericNumericMap,
+		"findNumericStringMap":		findNumericStringMap,
+		"findStringBoolMap":		findStringBoolMap, 
+		"findStringNumericMap":		findStringNumericMap,
+		"findStringStringMap":		findStringStringMap,
+		"findSliceMap":				findSliceMap,
 	}
 }
 

@@ -89,7 +89,7 @@ func testFormatPassFail(name string, passed int, failed int) {
 // Outputs the test title
 func testFormatTitle(name string) {
 	if testsShowDetails {
-		fmt.Printf("\nRunning %s_test.go:\n\n", name)
+		fmt.Printf("\nRunning: %s_test.go:\n\n", name)
 	}
 }
 

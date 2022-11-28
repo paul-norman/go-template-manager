@@ -139,6 +139,35 @@ func interfaceHelperParseKind(kind string) (string, error) {
 }
 
 /*
+Converts the underlying type to another and returns an interface for it
+Only works with simple types (i.e. numbers / bools / strings)
+*/
+/*
+func interfaceHelperConvertUnderlying(value any, to string) (any, error) {
+	t := interfaceHelperType(value)
+
+	if t == to {
+		return value, nil
+	}
+
+	switch to {
+		case "int":
+			return interfaceHelperConvertToInt(value)
+		case "int8":
+			return interfaceHelperConvertToInt8(value)
+		case "int16":
+			return interfaceHelperConvertToInt16(value)
+		case "int32":
+			return interfaceHelperConvertToInt32(value)
+		case "int64":
+			return interfaceHelperConvertToInt64(value)
+	}
+
+	return "", fmt.Errorf("could not convert value of type: %v to type: %v", t, to)
+}
+*/
+
+/*
 Creates the absolute value of a float
 */
 func interfaceHelperAbsFloat64(value any) (float64, error) {

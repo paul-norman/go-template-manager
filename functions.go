@@ -86,6 +86,7 @@ func getDefaultFunctions() map[string]any {
 		"split":			split,
 		"startswith":		startswith,
 		"striptags":		stripTags,
+		"substr":			substr,
 		"subtract": 		subtract,
 		"suffix":			suffix,
 		"time":				timeFn,
@@ -1534,8 +1535,9 @@ func prefix(values ...reflect.Value) reflect.Value {
 	value		 = reflectHelperUnpackInterface(value)
 
 	for _, prefix := range prefixes {
-		if prefix.Kind() != reflect.String {
-			logError(sig + " can only prefix string values")
+		_, err := reflectHelperConvertToString(prefix)
+		if err != nil {
+			logError(sig + " can only prefix values that can be converted into strings")
 			return value
 		}
 	}
@@ -1544,7 +1546,8 @@ func prefix(values ...reflect.Value) reflect.Value {
 		case reflect.String:
 			str := ""
 			for _, prefix := range prefixes {
-				str += prefix.String()
+				pref, _ := reflectHelperConvertToString(prefix)
+				str += pref
 			}
 			str += value.String()
 			return reflect.ValueOf(str)
@@ -1974,6 +1977,63 @@ func stripTags(value reflect.Value) reflect.Value {
 }
 
 /*
+ func substr[T any](offset int, length int, value T) T
+Extracts a substring from a `value` starting at the specified `offset` and including `length` runes from that point.
+If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
+*/
+func substr(offset reflect.Value, length reflect.Value, value reflect.Value) reflect.Value {
+	sig := "substr(offset int, length int, value any)"
+
+	offset	= reflectHelperUnpackInterface(offset)
+	length	= reflectHelperUnpackInterface(length)
+	value	= reflectHelperUnpackInterface(value)
+
+	if !value.IsValid() {
+		logError(sig + " value acted upon must be a string or an object that can contain strings")
+		return value
+	}
+
+	if !reflectHelperIsNumeric(offset) || !offset.IsValid() || offset.Int() < 0 {
+		logError(sig + " offset must be a positive number")
+		return value
+	}
+
+	if !reflectHelperIsNumeric(length) || !length.IsValid() {
+		logError(sig + " length must be a number")
+		return value
+	}
+
+	length, _ = reflectHelperConvertUnderlying(length, reflect.Int64)
+
+	str, err := reflectHelperConvertToString(value)
+	if err == nil {
+		runes := []rune(str)
+
+		if length.Int() == 0 {
+			str = string(runes[offset.Int():])
+		} else if length.Int() < 0 {
+			end := length.Int() + int64(len(runes))
+			if end < offset.Int() {
+				end = offset.Int() 
+			}
+			str = string(runes[offset.Int():end])
+		} else {
+			end := length.Int() + offset.Int()
+			if end > int64(len(runes)) {
+				end = int64(len(runes))
+			}
+			str = string(runes[offset.Int():end])
+		}
+
+		ret, _ := reflectHelperConvertUnderlying(reflect.ValueOf(str), value.Kind())
+
+		return ret
+	}
+
+	return recursiveHelper(value, reflect.ValueOf(substr), offset, length)
+}
+
+/*
  func subtract[T any](value T, to T) T
 Removes a value from the existing item.
 For numeric items this is a simple subtraction. For other types this is removed as appropriate.
@@ -2083,8 +2143,9 @@ func suffix(values ...reflect.Value) reflect.Value {
 	value		 = reflectHelperUnpackInterface(value)
 
 	for _, suffix := range suffixes {
-		if suffix.Kind() != reflect.String {
-			logError(sig + " can only suffix string values")
+		_, err := reflectHelperConvertToString(suffix)
+		if err != nil {
+			logError(sig + " can only suffix values which can be converted to strings")
 			return value
 		}
 	}
@@ -2093,7 +2154,8 @@ func suffix(values ...reflect.Value) reflect.Value {
 		case reflect.String:
 			str := value.String()
 			for _, suffix := range suffixes {
-				str += suffix.String()
+				suff, _ := reflectHelperConvertToString(suffix)
+				str += suff
 			}
 			return reflect.ValueOf(str)
 	}
@@ -2584,26 +2646,30 @@ func wordcount(value reflect.Value) int {
 Wraps all strings within `value` with a prefix and suffix
 If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 */
-func wrap(prefixValue reflect.Value, suffixValue reflect.Value, value reflect.Value) reflect.Value {
+func wrap(prefix reflect.Value, suffix reflect.Value, value reflect.Value) reflect.Value {
 	sig		:= "wrap(prefix string, suffix string, value any)"
 	value	= reflectHelperUnpackInterface(value)
 
-	if prefixValue.Kind() != reflect.String {
-		logError(sig + " can only prefix string values")
+	_, err := reflectHelperConvertToString(prefix)
+	if err != nil {
+		logError(sig + " can only prefix values that can be converted to a string")
 		return value
 	}
 
-	if suffixValue.Kind() != reflect.String {
-		logError(sig + " can only suffix string values")
+	_, err = reflectHelperConvertToString(suffix)
+	if err != nil {
+		logError(sig + " can only suffix values that can be converted to a string")
 		return value
 	}
 
 	switch value.Kind() {
 		case reflect.String:
-			return reflect.ValueOf(prefixValue.String() + value.String() + suffixValue.String())
+			pref, _ := reflectHelperConvertToString(prefix)
+			suff, _ := reflectHelperConvertToString(suffix)
+			return reflect.ValueOf(pref + value.String() + suff)
 	}
 
-	return recursiveHelper(value, reflect.ValueOf(wrap), prefixValue, suffixValue)
+	return recursiveHelper(value, reflect.ValueOf(wrap), prefix, suffix)
 }
 
 /*
