@@ -251,8 +251,8 @@ func (tm *TemplateManager) Delimiters(left string, right string) *TemplateManage
 func (tm *TemplateManager) Debug(debug bool) *TemplateManager {
 	tm.debug = debug
 
-	logErrors	= true
-	logWarnings	= true
+	consoleErrors	= true
+	consoleWarnings	= true
 
 	return tm
 }
@@ -466,13 +466,15 @@ func (tm *TemplateManager) Render(name string, params Params, writer io.Writer) 
 
 	params = tm.buildParams(name, params)
 	
-	err = tmpl.Execute(writer, params)
+	buf := &bytes.Buffer{}
+	err = tmpl.Execute(buf, params)
 	if err != nil {
-		logError(err.Error())
+		err = logError("FATAL: " + err.Error())
 		return err
 	}
 
-	return err
+	buf.WriteTo(writer)
+	return nil
 }
 
 // Adds the default functions to the `TemplateManager` instance
@@ -702,12 +704,12 @@ func (tm *TemplateManager) configureNewTemplate(tmpl *template.Template) *templa
 			if len(args) > 0 {
 				data = args[0]
 			}
-            buf := &bytes.Buffer{}
-            err := tmpl.ExecuteTemplate(buf, name, data)
+			buf := &bytes.Buffer{}
+			err := tmpl.ExecuteTemplate(buf, name, data)
 			if err != nil {
 				return ""
 			}
-            return buf.String()
+			return buf.String()
         },
 	})
 

@@ -93,10 +93,10 @@ or
 var tm = templateManager.Init("templates", ".html")
 ```
 
-During parsing, `templateManager` only needs to know about the location of the "entry" template files as it will scan each for its dependencies. It is therefore best that it does not know about layout files or partials and these should be kept separate and excluded from parsing:
+During parsing, `templateManager` only needs to know about the location of the "entry" template files as it will scan each for its dependencies. It is therefore best that it does not know about layout files, partials or components and these should be kept separate and excluded from parsing:
 
 ```go
-tm.ExcludeDirectories([]string{"layouts", "partials"})
+tm.ExcludeDirectories([]string{"layouts", "partials", "components"})
 ```
 
 Once these variables have been configured, the template parsing can be triggered to build the cache.
@@ -108,8 +108,10 @@ tm.Parse()
 To run a template, use the `Render()` method:
 
 ```go
-tm.Render("test.html", TM.Params{"Title": "Test"}, ioWriter)
+err := tm.Render("test.html", TM.Params{"Title": "Test"}, ioWriter)
 ```
+
+If an error is encountered, no output will be written to `ioWriter` allowing you to display a custom error page of your choosing.
 
 ## Customisation Options
 
@@ -167,11 +169,17 @@ import (
 	TM "github.com/paul-norman/go-template-manager"
 )
 
-// Control whether errors are written to the log
-TM.SetErrors(false)
+// Control whether errors will cause rendering of the template to abort (default: true)
+TM.SetHaltOnErrors(false)
 
-// Control whether warnings are written to the log
-TM.SetWarnings(warnings bool)
+// Control whether warnings will cause rendering of the template to abort (default: false)
+TM.SetHaltOnWarnings(true)
+
+// Control whether errors are written to the log (default: true)
+TM.SetConsoleErrors(false)
+
+// Control whether warnings are written to the log (default: true)
+TM.SetConsoleWarnings(false)
 
 // Sets the default format for the `date` function (default: d/m/Y)
 // May be in Go, PHP or Python format
@@ -377,7 +385,7 @@ It might be safer to rewrite the above test function (`add()`) using the `reflec
 
 A selection of useful functions have been created to use in the templates to compliment those already built in to `text/template`. They are documented in their own [guide](FUNCTIONS.md), quick links:
 
-[`add`](FUNCTIONS.md#add), [`bool`](FUNCTIONS.md#bool), [`capfirst`](FUNCTIONS.md#capfirst), [`collection`](FUNCTIONS.md#collection), [`concat`](FUNCTIONS.md#concat), [`contains`](FUNCTIONS.md#contains), [`cut`](FUNCTIONS.md#cut), [`date`](FUNCTIONS.md#date), [`datetime`](FUNCTIONS.md#datetime), [`default`](FUNCTIONS.md#default), [`divide`](FUNCTIONS.md#divide), [`divideceil`](FUNCTIONS.md#divideceil), [`dividefloor`](FUNCTIONS.md#dividefloor), [`divisibleby`](FUNCTIONS.md#divisibleby), [`dl`](FUNCTIONS.md#dl), [`endswith`](FUNCTIONS.md#endswith), [`equal`](FUNCTIONS.md#equal), [`first`](FUNCTIONS.md#first), [`firstof`](FUNCTIONS.md#firstof), [`float`](FUNCTIONS.md#float), [`formattime`](FUNCTIONS.md#formattime), [`gto`](FUNCTIONS.md#gto-greater-than), [`gte`](FUNCTIONS.md#gte-greater-than-equal), [`htmldecode`](FUNCTIONS.md#htmldecode), [`htmlencode`](FUNCTIONS.md#htmlencode), [`int`](FUNCTIONS.md#int), [`iterable`](FUNCTIONS.md#iterable), [`join`](FUNCTIONS.md#join), [`jsondecode`](FUNCTIONS.md#jsondecode), [`jsonencode`](FUNCTIONS.md#jsonencode), [`key`](FUNCTIONS.md#key), [`kind`](FUNCTIONS#kind), [`last`](FUNCTIONS.md#last), [`length`](FUNCTIONS.md#length), [`list`](FUNCTIONS.md#list), [`lto`](FUNCTIONS.md#lto-less-than), [`lte`](FUNCTIONS.md#lte-less-than-equal), [`localtime`](FUNCTIONS.md#localtime), [`lower`](FUNCTIONS.md#lower), [`ltrim`](FUNCTIONS.md#ltrim), [`md5`](FUNCTIONS.md#md5), [`mktime`](FUNCTIONS.md#mktime), [`multiply`](FUNCTIONS.md#multiply), [`nl2br`](FUNCTIONS.md#nl2br), [`notequal`](FUNCTIONS.md#notequal), [`now`](FUNCTIONS.md#now), [`ol`](FUNCTIONS.md#ol), [`ordinal`](FUNCTIONS.md#ordinal), [`paragraph`](FUNCTIONS.md#paragraph), [`pluralise`](FUNCTIONS.md#pluralise), [`prefix`](FUNCTIONS.md#prefix), [`query`](FUNCTIONS.md#query), [`random`](FUNCTIONS.md#random), [`regexp`](FUNCTIONS.md#regexp), [`regexpreplace`](FUNCTIONS.md#regexpreplace), [`render`](FUNCTIONS.md#render), [`replace`](FUNCTIONS.md#replace), [`round`](FUNCTIONS.md#round), [`rtrim`](FUNCTIONS.md#rtrim), [`sha1`](FUNCTIONS.md#sha1), [`sha256`](FUNCTIONS.md#sha256), [`sha512`](FUNCTIONS.md#sha512), [`split`](FUNCTIONS.md#split), [`startswith`](FUNCTIONS.md#startswith), [`string`](FUNCTIONS.md#string), [`striptags`](FUNCTIONS.md#striptags), [`substr`](FUNCTIONS.md#substr), [`subtract`](FUNCTIONS.md#subtract), [`suffix`](FUNCTIONS.md#suffix), [`time`](FUNCTIONS.md#time), [`timesince`](FUNCTIONS.md#timesince), [`timeuntil`](FUNCTIONS.md#timeuntil), [`title`](FUNCTIONS.md#title), [`trim`](FUNCTIONS.md#trim), [`truncate`](FUNCTIONS.md#truncate), [`truncatewords`](FUNCTIONS.md#truncatewords), [`type`](FUNCTIONS.md#type), [`ul`](FUNCTIONS.md#ul), [`upper`](FUNCTIONS.md#upper), [`urldecode`](FUNCTIONS.md#urldecode), [`urlencode`](FUNCTIONS.md#urlencode), [`uuid`](FUNCTIONS.md#uuid), [`wordcount`](FUNCTIONS.md#wordcount), [`wrap`](FUNCTIONS.md#wrap), [`year`](FUNCTIONS.md#year), [`yesno`](FUNCTIONS.md#yesno)
+[`add`](FUNCTIONS.md#add), [`bool`](FUNCTIONS.md#bool), [`capfirst`](FUNCTIONS.md#capfirst), [`collection`](FUNCTIONS.md#collection), [`concat`](FUNCTIONS.md#concat), [`contains`](FUNCTIONS.md#contains), [`cut`](FUNCTIONS.md#cut), [`date`](FUNCTIONS.md#date), [`datetime`](FUNCTIONS.md#datetime), [`default`](FUNCTIONS.md#default), [`divide`](FUNCTIONS.md#divide), [`divideceil`](FUNCTIONS.md#divideceil), [`dividefloor`](FUNCTIONS.md#dividefloor), [`divisibleby`](FUNCTIONS.md#divisibleby), [`dl`](FUNCTIONS.md#dl), [`endswith`](FUNCTIONS.md#endswith), [`equal`](FUNCTIONS.md#equal), [`first`](FUNCTIONS.md#first), [`firstof`](FUNCTIONS.md#firstof), [`float`](FUNCTIONS.md#float), [`formattime`](FUNCTIONS.md#formattime), [`gto`](FUNCTIONS.md#gto-greater-than), [`gte`](FUNCTIONS.md#gte-greater-than-equal), [`htmldecode`](FUNCTIONS.md#htmldecode), [`htmlencode`](FUNCTIONS.md#htmlencode), [`int`](FUNCTIONS.md#int), [`iterable`](FUNCTIONS.md#iterable), [`join`](FUNCTIONS.md#join), [`jsondecode`](FUNCTIONS.md#jsondecode), [`jsonencode`](FUNCTIONS.md#jsonencode), [`key`](FUNCTIONS.md#key), [`keys`](FUNCTIONS.md#keys), [`kind`](FUNCTIONS#kind), [`last`](FUNCTIONS.md#last), [`length`](FUNCTIONS.md#length), [`list`](FUNCTIONS.md#list), [`lto`](FUNCTIONS.md#lto-less-than), [`lte`](FUNCTIONS.md#lte-less-than-equal), [`localtime`](FUNCTIONS.md#localtime), [`lower`](FUNCTIONS.md#lower), [`ltrim`](FUNCTIONS.md#ltrim), [`md5`](FUNCTIONS.md#md5), [`mktime`](FUNCTIONS.md#mktime), [`multiply`](FUNCTIONS.md#multiply), [`nl2br`](FUNCTIONS.md#nl2br), [`notequal`](FUNCTIONS.md#notequal), [`now`](FUNCTIONS.md#now), [`ol`](FUNCTIONS.md#ol), [`ordinal`](FUNCTIONS.md#ordinal), [`paragraph`](FUNCTIONS.md#paragraph), [`pluralise`](FUNCTIONS.md#pluralise), [`prefix`](FUNCTIONS.md#prefix), [`query`](FUNCTIONS.md#query), [`random`](FUNCTIONS.md#random), [`regexp`](FUNCTIONS.md#regexp), [`regexpreplace`](FUNCTIONS.md#regexpreplace), [`render`](FUNCTIONS.md#render), [`replace`](FUNCTIONS.md#replace), [`round`](FUNCTIONS.md#round), [`rtrim`](FUNCTIONS.md#rtrim), [`sha1`](FUNCTIONS.md#sha1), [`sha256`](FUNCTIONS.md#sha256), [`sha512`](FUNCTIONS.md#sha512), [`split`](FUNCTIONS.md#split), [`startswith`](FUNCTIONS.md#startswith), [`string`](FUNCTIONS.md#string), [`striptags`](FUNCTIONS.md#striptags), [`substr`](FUNCTIONS.md#substr), [`subtract`](FUNCTIONS.md#subtract), [`suffix`](FUNCTIONS.md#suffix), [`time`](FUNCTIONS.md#time), [`timesince`](FUNCTIONS.md#timesince), [`timeuntil`](FUNCTIONS.md#timeuntil), [`title`](FUNCTIONS.md#title), [`trim`](FUNCTIONS.md#trim), [`truncate`](FUNCTIONS.md#truncate), [`truncatewords`](FUNCTIONS.md#truncatewords), [`type`](FUNCTIONS.md#type), [`ul`](FUNCTIONS.md#ul), [`upper`](FUNCTIONS.md#upper), [`urldecode`](FUNCTIONS.md#urldecode), [`urlencode`](FUNCTIONS.md#urlencode), [`uuid`](FUNCTIONS.md#uuid), [`values`](FUNCTIONS.md#values), [`wordcount`](FUNCTIONS.md#wordcount), [`wrap`](FUNCTIONS.md#wrap), [`year`](FUNCTIONS.md#year), [`yesno`](FUNCTIONS.md#yesno)
 
 They are all added by default, but can be removed if necessary *(e.g. before adding any functions of your own)*:
 
@@ -409,7 +417,33 @@ tm.RemoveFunctions([]string{"ge", "le"})
 
 ## Error Handling
 
-TODO add error handling!! 
+The `text/template` package allows functions to return errors which will halt execution immediately, mid way through a document. This is often undesirable.
+
+For this reason, `templateManager` only outputs any data if no errors are encountered. In production environments, this is useful so as to display custom 500 pages. However, in development it is often desirable to have errors in the console, but allow execution to complete anyway *(so as better to see what is happening)*.
+
+To achieve this, all `templateManager` functions generate errors in a manner where they can be controlled. There are two types of `error`, a warning and a full error. The latter is designed to alert the developer to them doing something likely undesirable *(e.g. trying to divide by a `nil` variable or zero)*, while a warning is designed to draw attention to something that only might be incorrect *(e.g. testing if an unset variable is equal to 1)*.
+
+These special errors may be instructed to display in the console and also to halt the program if they are encountered. These are global options:
+
+```go
+import (
+	TM "github.com/paul-norman/go-template-manager"
+)
+
+// Control whether errors will cause rendering of the template to abort (default: true)
+TM.SetHaltOnErrors(false)
+
+// Control whether warnings will cause rendering of the template to abort (default: false)
+TM.SetHaltOnWarnings(true)
+
+// Control whether errors are written to the log (default: true)
+TM.SetConsoleErrors(false)
+
+// Control whether warnings are written to the log (default: true)
+TM.SetConsoleWarnings(false)
+```
+
+Sadly, there is no means of getting detailed information *(i.e. template name, line number etc)* for errors, so this is only provided if an error bubbles back up to the `Render` function and is caught there *(thus if haltOnError is disabled, these are missing, though shouldn't be a problem during development)*.
 
 ## Simple Example
 

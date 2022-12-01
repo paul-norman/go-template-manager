@@ -2,7 +2,7 @@
 
 All functions in `templateManager` accept their principle argument **last** to allow simple chaining. *Efforts have been made to output clear errors and return suitable empty values rather than cause panics (a problem in several `text/template` functions)*.
 
-Contents: [`add`](#add), [`bool`](#bool), [`capfirst`](#capfirst), [`collection`](#collection), [`concat`](#concat), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divideceil`](#divideceil), [`dividefloor`](#dividefloor), [`divisibleby`](#divisibleby), [`dl`](#dl), [`endswith`](#endswith), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`float`](#float), [`formattime`](#formattime), [`gto`](#gto-greater-than), [`gte`](#gte-greater-than-equal), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`int`](#int), [`iterable`](#iterable), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`kind`](#kind), [`last`](#last), [`length`](#length), [`list`](#list), [`lto`](#lto-less-than), [`lte`](#lte-less-than-equal), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`md5`](#md5), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`query`](#query), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`render`](#render), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`sha1`](#sha1), [`sha256`](#sha256), [`sha512`](#sha512), [`split`](#split), [`startswith`](#startswith), [`string`](#string), [`striptags`](#striptags), [`substr`](#substr), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`uuid`](#uuid), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
+Contents: [`add`](#add), [`bool`](#bool), [`capfirst`](#capfirst), [`collection`](#collection), [`concat`](#concat), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divideceil`](#divideceil), [`dividefloor`](#dividefloor), [`divisibleby`](#divisibleby), [`dl`](#dl), [`endswith`](#endswith), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`float`](#float), [`formattime`](#formattime), [`gto`](#gto-greater-than), [`gte`](#gte-greater-than-equal), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`int`](#int), [`iterable`](#iterable), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`keys`](#keys), [`kind`](#kind), [`last`](#last), [`length`](#length), [`list`](#list), [`lto`](#lto-less-than), [`lte`](#lte-less-than-equal), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`md5`](#md5), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`query`](#query), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`render`](#render), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`sha1`](#sha1), [`sha256`](#sha256), [`sha512`](#sha512), [`split`](#split), [`startswith`](#startswith), [`string`](#string), [`striptags`](#striptags), [`substr`](#substr), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`uuid`](#uuid), [`values`](#values), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
 
 ## `add`
 
@@ -760,6 +760,22 @@ Very similar to the in-built `text/template` [`index`](BASICS.md#general-utility
 ```
 
 *(N.B. If [`OverloadFunctions()`](README.md#overloading-texttemplate-functions) has been used, this function will also replace the built in [`index`](BASICS.md#index) function)*
+
+## `keys`
+
+```go
+func keys(value any) []any
+```
+
+Returns the keys of a slice / array / map / struct.
+
+```django
+{{ keys .Slice }}
+<!-- []int{0, 1, 2} -->
+
+{{ keys .Map }}
+<!-- []string{"key1", "key2", "key3"} -->
+```
 
 ## `kind`
 
@@ -1820,6 +1836,22 @@ Generates a unique ID using the `github.com/google/uuid` package based on RFC 41
 ```django
 {{ uuid }}
 <!-- f47ac10b-58cc-0372-8567-0e02b2c3d479 -->
+```
+
+## `values`
+
+```go
+func values(value any) []any
+```
+
+Returns the values of a slice / array / map / struct.
+
+```django
+{{ values .Slice }}
+<!-- []int{12, 44, 128} -->
+
+{{ values .Map }}
+<!-- []string{"value1", "value2", "value3"} -->
 ```
 
 ## `wordcount`

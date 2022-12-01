@@ -47,20 +47,26 @@ func equalFloats(float1 float64, float2 float64) bool {
 /*
 A helper that powers the 3 divide functions.
 */
-func divideHelper(roundMethod reflect.Value, divisor reflect.Value, value reflect.Value) reflect.Value {
-	sig		:= "divide" + roundMethod.String() + "(divisor int, value any)"
+func divideHelper(roundMethod reflect.Value, divisor reflect.Value, value reflect.Value) (reflect.Value, error) {
+	sig := "divide" + roundMethod.String() + "(divisor int, value any)"
+
 	divisor	= reflectHelperUnpackInterface(divisor)
 	value	= reflectHelperUnpackInterface(value)
 
+	if !divisor.IsValid() {
+		err := logError(sig + " divisor cannot be an untyped nil value")
+		return value, err
+	}
+
 	if !reflectHelperIsNumeric(divisor) {
-		logError(sig + fmt.Sprintf(" divisor must be numeric, not %s", value.Type()))
-		return value
+		err := logError(sig + " divisor must be numeric, not %s", value.Type())
+		return value, err
 	}
 
 	div, _ := reflectHelperConvertToFloat64(divisor)
 	if div == 0.0 {
-		logError(sig + " divisor must not be zero")
-		return value
+		err := logError(sig + " divisor must not be zero")
+		return value, err
 	}
 
 	switch value.Kind() {
@@ -73,14 +79,14 @@ func divideHelper(roundMethod reflect.Value, divisor reflect.Value, value reflec
 				case "floor": op = floorFloat(op, 0)
 				case "round": op = roundFloat(op, 0)
 			}
-			return reflect.ValueOf(int64(op)).Convert(value.Type())
+			return reflect.ValueOf(int64(op)).Convert(value.Type()), nil
 		case reflect.Float32, reflect.Float64:
 			val, _ := reflectHelperConvertToFloat64(value)
 			op := val / div
-			return reflect.ValueOf(op).Convert(value.Type())
+			return reflect.ValueOf(op).Convert(value.Type()), nil
 		case reflect.String, reflect.Bool:
-			logWarning(sig + fmt.Sprintf(" trying to divide a %s", value.Type()))
-			return value
+			err := logError(sig + fmt.Sprintf(" trying to divide a %s", value.Type()))
+			return value, err
 	}
 
 	return recursiveHelper(value, reflect.ValueOf(divideHelper), roundMethod, divisor)
@@ -187,7 +193,7 @@ A helper that parses a `time.Duration` field into a map of integers containing t
 
 `years`, `weeks`, `days`, `hours`, `minutes`, `seconds`
 */
-func formatDuration(duration time.Duration) map[string]int {
+func formatDuration(duration time.Duration) (map[string]int, error) {
 	const (
 		Day		= 24 * time.Hour
 		Week	= 7 * Day
@@ -211,18 +217,18 @@ func formatDuration(duration time.Duration) map[string]int {
 
 	seconds := duration / time.Second
 
-	return map[string]int{"years": int(years), "weeks": int(weeks), "days": int(days), "hours": int(hours), "minutes": int(minutes), "seconds": int(seconds) }
+	return map[string]int{"years": int(years), "weeks": int(weeks), "days": int(days), "hours": int(hours), "minutes": int(minutes), "seconds": int(seconds) }, nil
 }
 
 /*
 A helper that will look at all values in an `input` argument and run function `call` on each passing in
 the `arguments` and the `input` value as the final argument 
 */
-func recursiveHelper(input reflect.Value, call reflect.Value, arguments ...reflect.Value) reflect.Value {
+func recursiveHelper(input reflect.Value, call reflect.Value, arguments ...reflect.Value) (reflect.Value, error) {
 	input = reflectHelperUnpackInterface(input)
 
 	if !input.IsValid() {
-		return reflect.Value{}
+		return reflect.Value{}, fmt.Errorf("cannot recurse through untyped nil values")
 	}
 
 	for i, v := range arguments {
@@ -240,7 +246,7 @@ func recursiveHelper(input reflect.Value, call reflect.Value, arguments ...refle
 			if input.Kind() == reflect.Array {
 				tmp, _ = reflectHelperConvertSliceToArray(tmp)
 			}
-			return tmp
+			return tmp, nil
 		case reflect.Map:
 			tmp := reflect.MakeMap(input.Type())
 			iter := input.MapRange()
@@ -249,7 +255,7 @@ func recursiveHelper(input reflect.Value, call reflect.Value, arguments ...refle
 				tmp.SetMapIndex(iter.Key(), call.Call(arguments)[0].Interface().(reflect.Value))
 				arguments = arguments[:len(arguments) - 1]
 			}
-			return tmp
+			return tmp, nil
 		case reflect.Struct:
 			tmp := reflect.New(input.Type()).Elem()
 			for i := 0; i < tmp.NumField(); i++ {
@@ -259,18 +265,20 @@ func recursiveHelper(input reflect.Value, call reflect.Value, arguments ...refle
 					arguments = arguments[:len(arguments) - 1]
 				}
 			}
-			return tmp
+			return tmp, nil
 		default:
-			return input
+			return input, nil
 	}
 }
 
 /*
 Simple helper to perform the logic for ul, ol and dl functions
 */
-func listHelper(value reflect.Value, tag string) string {
-	sig		:= tag + "(value any, tag string)"
-	value	= reflectHelperUnpackInterface(value)
+func listHelper(value reflect.Value, tag string) (string, error) {
+	sig := tag + "(value any, tag string)"
+
+	value = reflectHelperUnpackInterface(value)
+
 	list	:= ""
 	li		:= "li"
 	if tag == "dl" {
@@ -278,18 +286,19 @@ func listHelper(value reflect.Value, tag string) string {
 	}
 
 	if !value.IsValid() {
-		logError(sig + " is trying to list an untyped nil value")
-		return ""
+		err := logError(sig + " is trying to list an untyped nil value")
+		return "", err
 	}
 
 	switch value.Kind() {
 		case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, 
 		reflect.Uint64, reflect.Float32, reflect.Float64, reflect.Bool:
-			return fmt.Sprintf("%v", value)
+			return fmt.Sprintf("%v", value), nil
 		case reflect.Array, reflect.Slice:
 			list += "<" + tag + ">"
 			for i := 0; i < value.Len(); i++ {
-				list += "<" + li + ">" + listHelper(value.Index(i), tag) + "</" + li + ">"
+				recurse, _ := listHelper(value.Index(i), tag)
+				list += "<" + li + ">" + recurse + "</" + li + ">"
 			}
 			list += "</" + tag + ">"
 		case reflect.Map:
@@ -298,29 +307,30 @@ func listHelper(value reflect.Value, tag string) string {
 			if err == nil {
 				for i := 0; i < keys.Len(); i++ {
 					if tag == "dl" {
-						list += "<dt>" + listHelper(keys.Index(i), tag) + "</dt>"
+						recurse, _ := listHelper(keys.Index(i), tag)
+						list += "<dt>" + recurse + "</dt>"
 					}
-					list += "<" + li + ">" + listHelper(value.MapIndex(keys.Index(i)), tag) + "</" + li + ">"
+					recurse, _ := listHelper(value.MapIndex(keys.Index(i)), tag)
+					list += "<" + li + ">" + recurse + "</" + li + ">"
 				}
 			} else {
 				iter := value.MapRange()
 				for iter.Next() {
 					if tag == "dl" {
-						list += "<dt>" + listHelper(iter.Key(), tag) + "</dt>"
+						recurse, _ := listHelper(iter.Key(), tag)
+						list += "<dt>" + recurse + "</dt>"
 					}
-					list += "<" + li + ">" + listHelper(iter.Value(), tag) + "</" + li + ">"
+					recurse, _ := listHelper(iter.Value(), tag)
+					list += "<" + li + ">" + recurse + "</" + li + ">"
 				}	
 			}
 			list += "</" + tag + ">"
-		case reflect.Invalid:
-			logError(sig + " invalid value passed")
-			return ""
 		default:
-			logError(sig + fmt.Sprintf(" can't list items of type %s", value.Type()))
-			return ""
+			err := logError(sig + " can't list items of type %s", value.Type())
+			return "", err
 	}
 
-	return list
+	return list, nil
 }
 
 /*

@@ -844,11 +844,21 @@ func reflectHelperConvertAnythingToString(value reflect.Value) (string, error) {
 			}
 		case reflect.Map:
 			stringValue = ""
-			iter := value.MapRange()
-			for iter.Next() {
-				val, err := reflectHelperConvertAnythingToString(iter.Value())
-				if err == nil {
-					stringValue += val
+			keys, err := reflectHelperMapSort(value)
+			if err == nil {
+				for i := 0; i < keys.Len(); i++ {
+					val, err := reflectHelperConvertAnythingToString(value.MapIndex(keys.Index(i)))
+					if err == nil {
+						stringValue += val
+					}
+				}
+			} else {
+				iter := value.MapRange()
+				for iter.Next() {
+					val, err := reflectHelperConvertAnythingToString(iter.Value())
+					if err == nil {
+						stringValue += val
+					}
 				}
 			}
 		case reflect.Struct:

@@ -5,14 +5,16 @@ import (
 )
 
 var (
-	testsShowDetails = false
-	testsShowSuccessful = false
-	logErrors = true
-	logWarnings = true
-	dateDefaultDateFormat = "d/m/Y"
-	dateDefaultDatetimeFormat = "d/m/Y H:i"
-	dateDefaultTimeFormat = "H:i"
-	dateLocalTimezone *time.Location = time.FixedZone("UTC", 0)
+	testsShowDetails			= false
+	testsShowSuccessful 		= false
+	consoleErrors				= true
+	haltOnErrors				= true
+	consoleWarnings				= true
+	haltOnWarnings				= false
+	dateDefaultDateFormat		= "d/m/Y"
+	dateDefaultDatetimeFormat	= "d/m/Y H:i"
+	dateDefaultTimeFormat		= "H:i"
+	dateLocalTimezone 			= time.FixedZone("UTC", 0)
 )
 
 // Sets the default format for the `date` function (default: d/m/Y)
@@ -34,8 +36,23 @@ func SetDefaultTimeFormat(format string) {
 }
 
 // Control whether errors are written to the log
-func SetErrors(errors bool) {
-	logErrors = errors
+func SetHaltOnErrors(errors bool) {
+	haltOnErrors = errors
+}
+
+// Control whether warnings are written to the log
+func SetHaltOnWarnings(warnings bool) {
+	haltOnWarnings = warnings
+}
+
+// Control whether errors are written to the console
+func SetConsoleErrors(errors bool) {
+	consoleErrors = errors
+}
+
+// Control whether warnings are written to the console
+func SetConsoleWarnings(warnings bool) {
+	consoleWarnings = warnings
 }
 
 // Sets the default timezone location used by date / time functions (default: UTC)
@@ -58,9 +75,4 @@ func SetTimezoneLocationString(location string) error {
 // Sets the default timezone location used by date / time functions to a fixed offset (default: UTC)
 func SetTimezoneFixed(name string, offset int) {
 	dateLocalTimezone = time.FixedZone(name, offset)
-}
-
-// Control whether warnings are written to the log
-func SetWarnings(warnings bool) {
-	logWarnings = warnings
 }

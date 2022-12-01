@@ -7,8 +7,10 @@ import (
 func TestAAParseVariablesSetup(tester  *testing.T) {
 	testsShowDetails	= true
 	testsShowSuccessful = false
-	logErrors			= false
-	logWarnings			= false
+	consoleErrors		= false
+	consoleWarnings		= false
+	haltOnErrors		= false
+	haltOnWarnings		= false
 
 	initRegexps()
 

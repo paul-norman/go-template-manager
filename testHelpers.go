@@ -9,28 +9,28 @@ import (
 )
 
 // Call the reflection-based function that has 1 argument
-func testCall1Arg[T reflect.Value|any](tester *testing.T, fn func(reflect.Value) T, value1 any, expected any) bool {
-	result := fn(reflect.ValueOf(value1))
+func testCall1Arg[T reflect.Value|any](tester *testing.T, fn func(reflect.Value) (T, error), value1 any, expected any) bool {
+	result, _ := fn(reflect.ValueOf(value1))
 	arguments := fmt.Sprintf("(\033[33m%#v\033[36m)", value1)
 	return testDeepEqual(tester, arguments, result, expected, reflect.ValueOf(fn))
 }
 
 // Call the reflection-based function that has 2 arguments
-func testCall2Args[T reflect.Value|any](tester *testing.T, fn func(reflect.Value, reflect.Value) T, value1 any, value2 any, expected any) bool {
-	result := fn(reflect.ValueOf(value1), reflect.ValueOf(value2))
+func testCall2Args[T reflect.Value|any](tester *testing.T, fn func(reflect.Value, reflect.Value) (T, error), value1 any, value2 any, expected any) bool {
+	result, _ := fn(reflect.ValueOf(value1), reflect.ValueOf(value2))
 	arguments := fmt.Sprintf("(\033[33m%#v\033[0m, \033[33m%#v\033[36m)", value1, value2)
 	return testDeepEqual(tester, arguments, result, expected, reflect.ValueOf(fn))
 }
 
 // Call the reflection-based function that has 3 arguments 
-func testCall3Args[T reflect.Value|any](tester *testing.T, fn func(reflect.Value, reflect.Value, reflect.Value) T, value1 any, value2 any, value3 any, expected any) bool {
-	result := fn(reflect.ValueOf(value1), reflect.ValueOf(value2), reflect.ValueOf(value3))
+func testCall3Args[T reflect.Value|any](tester *testing.T, fn func(reflect.Value, reflect.Value, reflect.Value) (T, error), value1 any, value2 any, value3 any, expected any) bool {
+	result, _ := fn(reflect.ValueOf(value1), reflect.ValueOf(value2), reflect.ValueOf(value3))
 	arguments := fmt.Sprintf("(\033[33m%#v\033[0m, \033[33m%#v\033[0m, \033[33m%#v\033[36m)", value1, value2, value3)
 	return testDeepEqual(tester, arguments, result, expected, reflect.ValueOf(fn))
 }
 
 // Call the reflection-based function that has variable arguments
-func testCallVarArgs[T reflect.Value|any](tester *testing.T, fn func(...reflect.Value) T, values []any, expected any) bool {
+func testCallVarArgs[T reflect.Value|any](tester *testing.T, fn func(...reflect.Value) (T, error), values []any, expected any) bool {
 	tmp := []reflect.Value{}
 	arguments := "("
 	for i, v := range values {
@@ -39,7 +39,7 @@ func testCallVarArgs[T reflect.Value|any](tester *testing.T, fn func(...reflect.
 		arguments += fmt.Sprintf("\033[33m%#v\033[36m", v)
 	}
 	arguments += ")"
-	result := fn(tmp...)
+	result, _ := fn(tmp...)
 	return testDeepEqual(tester, arguments, result, expected, reflect.ValueOf(fn))
 }
 
@@ -94,7 +94,7 @@ func testFormatTitle(name string) {
 }
 
 // Runs tests with 1 `reflect.Value` input and a single `reflect.Value` / interface output
-func testRun1ArgTests[T reflect.Value|any](fn func(reflect.Value) T, tests []struct{ input1, expected any }, tester *testing.T) {
+func testRun1ArgTests[T reflect.Value|any](fn func(reflect.Value) (T, error), tests []struct{ input1, expected any }, tester *testing.T) {
 	passed, failed := 0, 0
 	for _, test := range tests {
 		if testCall1Arg(tester, fn, test.input1, test.expected) {
@@ -109,7 +109,7 @@ func testRun1ArgTests[T reflect.Value|any](fn func(reflect.Value) T, tests []str
 }
 
 // Runs tests with 2 `reflect.Value` inputs and a single `reflect.Value` / interface output
-func testRun2ArgTests[T reflect.Value|any](fn func(reflect.Value, reflect.Value) T, tests []struct{ input1, input2, expected any }, tester *testing.T) {
+func testRun2ArgTests[T reflect.Value|any](fn func(reflect.Value, reflect.Value) (T, error), tests []struct{ input1, input2, expected any }, tester *testing.T) {
 	passed, failed := 0, 0
 	for _, test := range tests {
 		if testCall2Args(tester, fn, test.input1, test.input2, test.expected) {
@@ -124,7 +124,7 @@ func testRun2ArgTests[T reflect.Value|any](fn func(reflect.Value, reflect.Value)
 }
 
 // Runs tests with 3 `reflect.Value` inputs and a single `reflect.Value` / interface output
-func testRun3ArgTests[T reflect.Value|any](fn func(reflect.Value, reflect.Value, reflect.Value) T, tests []struct{ input1, input2, input3, expected any }, tester *testing.T) {
+func testRun3ArgTests[T reflect.Value|any](fn func(reflect.Value, reflect.Value, reflect.Value) (T, error), tests []struct{ input1, input2, input3, expected any }, tester *testing.T) {
 	passed, failed := 0, 0
 	for _, test := range tests {
 		if testCall3Args(tester, fn, test.input1, test.input2, test.input3, test.expected) {
@@ -139,7 +139,7 @@ func testRun3ArgTests[T reflect.Value|any](fn func(reflect.Value, reflect.Value,
 }
 
 // Runs tests with unlimited `reflect.Value` inputs and a single `reflect.Value` / interface output
-func testRunVarArgTests[T reflect.Value|any](fn func(...reflect.Value) T, tests []struct{ inputs []any; expected any }, tester *testing.T) {
+func testRunVarArgTests[T reflect.Value|any](fn func(...reflect.Value) (T, error), tests []struct{ inputs []any; expected any }, tester *testing.T) {
 	passed, failed := 0, 0
 	for _, test := range tests {
 		if testCallVarArgs(tester, fn, test.inputs, test.expected) {
@@ -155,37 +155,37 @@ func testRunVarArgTests[T reflect.Value|any](fn func(...reflect.Value) T, tests 
 
 // Automatically determine which tests should fun for the variables passed in
 func testRunArgTests(fn any, tests any, tester *testing.T) {
-	if real, ok := fn.(func(reflect.Value) reflect.Value); ok {
+	if real, ok := fn.(func(reflect.Value) (reflect.Value, error)); ok {
 		testRun1ArgTests(real, tests.([]struct{ input1, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value) bool); ok {
+	} else if real, ok := fn.(func(reflect.Value) (bool, error)); ok {
 		testRun1ArgTests(real, tests.([]struct{ input1, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value) int); ok {
+	} else if real, ok := fn.(func(reflect.Value) (int, error)); ok {
 		testRun1ArgTests(real, tests.([]struct{ input1, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value) float64); ok {
+	} else if real, ok := fn.(func(reflect.Value) (float64, error)); ok {
 		testRun1ArgTests(real, tests.([]struct{ input1, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value) string); ok {
+	} else if real, ok := fn.(func(reflect.Value) (string, error)); ok {
 		testRun1ArgTests(real, tests.([]struct{ input1, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value, reflect.Value) reflect.Value); ok {
+	} else if real, ok := fn.(func(reflect.Value, reflect.Value) (reflect.Value, error)); ok {
 		testRun2ArgTests(real, tests.([]struct{ input1, input2, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value, reflect.Value) bool); ok {
+	} else if real, ok := fn.(func(reflect.Value, reflect.Value) (bool, error)); ok {
 		testRun2ArgTests(real, tests.([]struct{ input1, input2, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value, reflect.Value) int); ok {
+	} else if real, ok := fn.(func(reflect.Value, reflect.Value) (int, error)); ok {
 		testRun2ArgTests(real, tests.([]struct{ input1, input2, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value, reflect.Value) float64); ok {
+	} else if real, ok := fn.(func(reflect.Value, reflect.Value) (float64, error)); ok {
 		testRun2ArgTests(real, tests.([]struct{ input1, input2, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value, reflect.Value) string); ok {
+	} else if real, ok := fn.(func(reflect.Value, reflect.Value) (string, error)); ok {
 		testRun2ArgTests(real, tests.([]struct{ input1, input2, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) reflect.Value); ok {
+	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) (reflect.Value, error)); ok {
 		testRun3ArgTests(real, tests.([]struct{ input1, input2, input3, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) bool); ok {
+	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) (bool, error)); ok {
 		testRun3ArgTests(real, tests.([]struct{ input1, input2, input3, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) int); ok {
+	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) (int, error)); ok {
 		testRun3ArgTests(real, tests.([]struct{ input1, input2, input3, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) float64); ok {
+	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) (float64, error)); ok {
 		testRun3ArgTests(real, tests.([]struct{ input1, input2, input3, expected any }), tester)
-	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) string); ok {
+	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) (string, error)); ok {
 		testRun3ArgTests(real, tests.([]struct{ input1, input2, input3, expected any }), tester)
-	} else if real, ok := fn.(func(...reflect.Value) reflect.Value); ok {
+	} else if real, ok := fn.(func(...reflect.Value) (reflect.Value, error)); ok {
 		testRunVarArgTests(real, tests.([]struct{ inputs []any; expected any }), tester)
 	} else {
 		tester.Errorf("\033[31mFAIL: \033[0mTests could not run!!")	

@@ -9,17 +9,29 @@ import (
 )
 
 // Logs error messages
-func logError(err string) {
-	if logErrors {
-		fmt.Println("\033[31m" + err + "\033[0m")
+func logError(format string, a ...any) error {
+	if consoleErrors {
+		fmt.Println("\033[31m" + fmt.Sprintf(format, a...) + "\033[0m")
 	}
+
+	if haltOnErrors {
+		return fmt.Errorf(format, a...)
+	}
+
+	return nil
 }
 
 // Logs warning messages
-func logWarning(warning string) {
-	if logWarnings {
-		fmt.Println("\033[33m" + warning + "\033[0m")
+func logWarning(format string, a ...any) error {
+	if consoleWarnings {
+		fmt.Println("\033[33m" + fmt.Sprintf(format, a...) + "\033[0m")
 	}
+
+	if haltOnWarnings {
+		return fmt.Errorf(format, a...)
+	}
+
+	return nil
 }
 
 // Logs informational messages
