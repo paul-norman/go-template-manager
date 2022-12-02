@@ -36,7 +36,6 @@ import (
 	"strings"
 	"strconv"
 	"sync"
-	"text/template"
 
 	"golang.org/x/exp/slices"
 	"github.com/google/uuid"
@@ -46,7 +45,8 @@ import (
 
 // Holds all templates and variables along with all required settings
 type TemplateManager struct {
-	templates 				map[string]*template.Template
+	templateType			string
+	templates 				map[string]*Template
 	params					map[string]map[string]any
 	descendants				map[string][]string
 	componentDirectories	[]string
@@ -73,7 +73,8 @@ var regexps map[string]*regexp.Regexp
 // Creates a new `TemplateManager` struct instance
 func Init(directory string, extension string) *TemplateManager {
 	templateManager := &TemplateManager{
-		templates:				make(map[string]*template.Template),
+		templateType:			"text",
+		templates:				make(map[string]*Template),
 		params:					make(map[string]map[string]any),
 		descendants:			make(map[string][]string),
 		componentDirectories:	[]string{"components"},
@@ -99,7 +100,8 @@ func Init(directory string, extension string) *TemplateManager {
 // Creates a new `TemplateManager` struct instance using an embedded filesystem
 func InitEmbed(fileSystem embed.FS, directory string, extension string) *TemplateManager {
 	templateManager := &TemplateManager{
-		templates:				make(map[string]*template.Template),
+		templateType:			"text",
+		templates:				make(map[string]*Template),
 		params:					make(map[string]map[string]any),
 		descendants:			make(map[string][]string),
 		componentDirectories:	[]string{"components"},
@@ -109,7 +111,7 @@ func InitEmbed(fileSystem embed.FS, directory string, extension string) *Templat
 		directory:				"/" + strings.TrimLeft(directory, " /"),
 		fileSystem:				http.FS(fileSystem),
 		extension:				extension,
-		excludedDirectories:	[]string{"layouts", "partials"},
+		excludedDirectories:	[]string{"layouts", "partials", "components"},
 		functions:				make(map[string]any),
 		debug:					false,
 		reload:					false,
@@ -155,7 +157,7 @@ func AutomaticInit() (*TemplateManager, error) {
 		if strings.HasPrefix(name, "templates/") || strings.HasPrefix(name, "views/") {
 			extension, err := checkAllowedExtension(name, allowedExtensions)
 			if err == nil {
-				templateDirectory		= strings.Split(name, "/")[0]
+				templateDirectory	= strings.Split(name, "/")[0]
 				templateExtension	= extension
 				return io.EOF
 			}
@@ -330,7 +332,7 @@ func (tm *TemplateManager) Parse() error {
 			}
 		}
 
-		tm.templates[name] = tm.configureNewTemplate(template.New(""))
+		tm.templates[name] = tm.configureNewTemplate(NewTemplate(tm.templateType, ""))
 		err = tm.parseFileDependencies(path, name, tm.directory, tm.templates[name])
 		if err != nil {
 			return err
@@ -445,7 +447,7 @@ func (tm *TemplateManager) Render(name string, params Params, writer io.Writer) 
 	if ! tm.parsed {
 		err := tm.Parse()
 		if err != nil {
-			logError(err.Error())
+			err = logError(err.Error())
 			return err
 		}
 	}
@@ -453,14 +455,14 @@ func (tm *TemplateManager) Render(name string, params Params, writer io.Writer) 
 	if tm.reload {
 		err := tm.reParseIndividualTemplate(tm.directory + "/" + name)
 		if err != nil {
-			logError(err.Error())
+			err = logError(err.Error())
 			return err
 		}
 	}
 
 	tmpl, err := tm.find(name)
 	if err != nil {
-		logError(err.Error())
+		err = logError(err.Error())
 		return err
 	}
 
@@ -475,6 +477,20 @@ func (tm *TemplateManager) Render(name string, params Params, writer io.Writer) 
 
 	buf.WriteTo(writer)
 	return nil
+}
+
+// Sets whether `TemplateManager` should use the `text/template` package or the `html/template` package
+func (tm *TemplateManager) TemplateEngine(engine string) *TemplateManager {
+	engine = strings.ToLower(engine)
+	if engine == "text" || engine == "text/template" {
+		tm.templateType = "text"
+	} else if engine == "html" || engine == "html/template" {
+		tm.templateType = "html"
+	} else {
+		panic("invalid template engine chosen: " + engine)
+	}
+
+	return tm
 }
 
 // Adds the default functions to the `TemplateManager` instance
@@ -516,7 +532,7 @@ func (tm *TemplateManager) buildParams(name string, params Params) Params {
 }
 
 // Finds an individual template bundle from the `TemplateManager`
-func (tm *TemplateManager) find(file string) (*template.Template, error) {
+func (tm *TemplateManager) find(file string) (*Template, error) {
 	if tmpl, ok := tm.templates[file]; ok {
 		tmpl = tmpl.Lookup(file)
 		if tmpl == nil {
@@ -529,6 +545,7 @@ func (tm *TemplateManager) find(file string) (*template.Template, error) {
 	return nil, fmt.Errorf("template %s not found", file) 
 }
 
+// Initialises all regexps required for detected components
 func (tm *TemplateManager) initComponentRegexps() {
 	if len(tm.components) > 0 {
 		findGeneratedDefines, _		:= regexp.Compile(`(?s)` + tm.delimiterLeft + `- define "content-([^"]{36})" -` + tm.delimiterRight + `(.+?)` + tm.delimiterLeft + `- end -` + tm.delimiterRight)
@@ -551,6 +568,7 @@ func (tm *TemplateManager) initComponentRegexps() {
 	}
 }
 
+// Initialises the regexps required by the file scanning
 func (tm *TemplateManager) initRegexps() {
 	findVars, _					:= regexp.Compile("(?s)\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*var\\s*[\"`]{1}\\s*([^\"]+)\\s*[\"`]{1}.*?" + tm.delimiterRight + "\\s*(.*?)\\s*" + tm.delimiterLeft + "\\s*end\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
 	findExtends, _				:= regexp.Compile("^\\s*" + tm.delimiterLeft + "(?:- )?(?:\\/\\*)?\\s*extends\\s*[\"`]{1}([^\"`]+)[\"`]{1}\\s*(?:\\*\\/)?(?: -)?" + tm.delimiterRight + "\\s*")
@@ -575,7 +593,7 @@ func (tm *TemplateManager) reParseIndividualTemplate(path string) error {
 		logWarning(fmt.Sprintf("Re-Parsing: %s (Path: %s)\n", name, path))
 	}
 
-	tm.templates[name] = tm.configureNewTemplate(template.New(""))
+	tm.templates[name] = tm.configureNewTemplate(NewTemplate(tm.templateType, ""))
 	err = tm.parseFileDependencies(path, name, tm.directory, tm.templates[name])
 	if err != nil {
 		return err
@@ -630,7 +648,7 @@ func (tm *TemplateManager) parseComponents() error {
 }
 
 // Handles parsing an individual file
-func (tm *TemplateManager) parseFileDependencies(path string, name string, directory string, tmpl *template.Template) error {
+func (tm *TemplateManager) parseFileDependencies(path string, name string, directory string, tmpl *Template) error {
 	dependencies, err := tm.getFileDependencies(path, directory)
 	if err != nil {
 		return err
@@ -695,7 +713,7 @@ func (tm *TemplateManager) parseFileDependencies(path string, name string, direc
 }
 
 // Configures a `template.Template` instance to use the `TemplateManager` settings
-func (tm *TemplateManager) configureNewTemplate(tmpl *template.Template) *template.Template {
+func (tm *TemplateManager) configureNewTemplate(tmpl *Template) *Template {
 	tmpl.Delims(tm.delimiterLeft, tm.delimiterRight)
 	tmpl.Funcs(tm.functions)
 	tmpl.Funcs(map[string]any {
@@ -717,13 +735,13 @@ func (tm *TemplateManager) configureNewTemplate(tmpl *template.Template) *templa
 }
 
 // Adds the file contents to the bundle
-func (tm *TemplateManager) addTemplate(path string, name string, directory string, tmpl *template.Template) error {
+func (tm *TemplateManager) addTemplate(path string, name string, directory string, tmpl *Template) error {
 	contents, err := tm.getFileContents(path, directory)
 	if err != nil {
 		return err
 	}
 
-	into := tm.configureNewTemplate(tmpl.New(name))
+	into := tm.configureNewTemplate(tmpl.NewSubTemplate(name))
 
 	for _, content := range contents {
 		_, err := into.Parse(content)

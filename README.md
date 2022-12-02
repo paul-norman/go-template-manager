@@ -1,6 +1,6 @@
 # TemplateManager
 
-Package `templateManager` simplifies the use of Go's standard library `text/template` for use with HTML templates.
+Package `templateManager` simplifies the use of Go's standard libraries: `text/template` / `html/template` for use with HTML templates.
 
 It automates the process of choosing which files to group together for parsing (creating bundles), and builds a store of each entry template file complete with all of its dependencies. It also allows simple variables to be globally defined in the templates themselves and the use of simple components.
 
@@ -33,7 +33,7 @@ import "github.com/paul-norman/go-template-manager"
 
 ## Main Features
 
-`templateManager` generally just simplifies the usage of the `text/templates` package. A basic usage guide to these [Go Templates](https://pkg.go.dev/text/template) is provided [here](BASICS.md).
+`templateManager` generally just simplifies the usage of the `text/templates` or `html/templates` package. A basic usage guide to these [Go Templates](https://pkg.go.dev/text/template) is provided [here](BASICS.md).
 
 ### `extends` keyword
 
@@ -116,6 +116,14 @@ If an error is encountered, no output will be written to `ioWriter` allowing you
 ## Customisation Options
 
 All customisation options are chainable for neat declaration.
+
+### Engine Choice
+
+Templates may be rendered with either the `text/template` package *(default)* or the `html/template` package:
+
+```go
+tm.TemplateEngine("html")
+```
 
 ### Delimiters
 

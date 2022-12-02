@@ -129,7 +129,7 @@ Concatenates any number of string-able values together in the order that they we
 {{ concat "first" "second" 3 4.567 }}
 <!-- firstsecond34.567 -->
 
-<!-- .Test is: []string{"test", "this"}
+<!-- .Test is: []string{"test", "this"} -->
 {{ concat "first" .Test "last" }}
 <!-- firsttestthislast -->
 ```

@@ -792,10 +792,12 @@ func greaterThan(value1 reflect.Value, value2 reflect.Value) (bool, error) {
 			if val2 > val1 {
 				return true, nil
 			}
+		default:
+			err = logError(sig + " values cannot be type %s", value1.Type())
+			return false, err
 	}
 
-	err = logError(sig + " values cannot be type %s", value1.Type())
-	return false, err
+	return false, nil
 }
 
 /*
@@ -831,10 +833,12 @@ func greaterThanEqual(value1 reflect.Value, value2 reflect.Value) (bool, error) 
 			if val2 >= val1 || equalFloats(val1, val2) {
 				return true, err
 			}
+		default:
+			err = logError(sig + " values cannot be type %s", value1.Type())
+			return false, err
 	}
 
-	err = logError(sig + " values cannot be type %s", value1.Type())
-	return false, err
+	return false, nil
 }
 
 /*
@@ -1292,10 +1296,12 @@ func lessThan(value1 reflect.Value, value2 reflect.Value) (bool, error) {
 			if val2 < val1 {
 				return true, nil
 			}
+		default:
+			err = logError(sig + " values cannot be type %s", value1.Type())
+			return false, err
 	}
 
-	err = logError(sig + " values cannot be type %s", value1.Type())
-	return false, err
+	return false, nil
 }
 
 /*
@@ -1331,10 +1337,12 @@ func lessThanEqual(value1 reflect.Value, value2 reflect.Value) (bool, error) {
 			if val2 < val1 || equalFloats(val1, val2) {
 				return true, err
 			}
+		default:
+			err = logError(sig + " values cannot be type %s", value1.Type())
+			return false, err
 	}
 
-	err = logError(sig + " values cannot be type %s", value1.Type())
-	return false, err
+	return false, nil
 }
 
 /*
