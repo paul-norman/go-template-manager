@@ -2,7 +2,7 @@
 
 All functions in `templateManager` accept their principle argument **last** to allow simple chaining. *Efforts have been made to output clear errors and return suitable empty values rather than cause panics (a problem in several `text/template` functions)*.
 
-Contents: [`add`](#add), [`bool`](#bool), [`capfirst`](#capfirst), [`collection`](#collection), [`concat`](#concat), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divideceil`](#divideceil), [`dividefloor`](#dividefloor), [`divisibleby`](#divisibleby), [`dl`](#dl), [`endswith`](#endswith), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`float`](#float), [`formattime`](#formattime), [`gto`](#gto-greater-than), [`gte`](#gte-greater-than-equal), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`int`](#int), [`iterable`](#iterable), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`keys`](#keys), [`kind`](#kind), [`last`](#last), [`length`](#length), [`list`](#list), [`lto`](#lto-less-than), [`lte`](#lte-less-than-equal), [`localtime`](#localtime), [`lower`](#lower), [`ltrim`](#ltrim), [`md5`](#md5), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`query`](#query), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`render`](#render), [`replace`](#replace), [`round`](#round), [`rtrim`](#rtrim), [`sha1`](#sha1), [`sha256`](#sha256), [`sha512`](#sha512), [`split`](#split), [`startswith`](#startswith), [`string`](#string), [`striptags`](#striptags), [`substr`](#substr), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`uuid`](#uuid), [`values`](#values), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
+Contents: [`add`](#add), [`bool`](#bool), [`capfirst`](#capfirst), [`collection`](#collection), [`concat`](#concat), [`contains`](#contains), [`cut`](#cut), [`date`](#date), [`datetime`](#datetime), [`default`](#default), [`divide`](#divide), [`divideceil`](#divideceil), [`dividefloor`](#dividefloor), [`divisibleby`](#divisibleby), [`dl`](#dl), [`endswith`](#endswith), [`equal`](#equal), [`first`](#first), [`firstof`](#firstof), [`float`](#float), [`formattime`](#formattime), [`gto`](#gto-greater-than), [`gte`](#gte-greater-than-equal), [`htmldecode`](#htmldecode), [`htmlencode`](#htmlencode), [`int`](#int), [`iterable`](#iterable), [`join`](#join), [`jsondecode`](#jsondecode), [`jsonencode`](#jsonencode), [`key`](#key), [`keys`](#keys), [`kind`](#kind), [`last`](#last), [`length`](#length), [`list`](#list), [`lto`](#lto-less-than), [`lte`](#lte-less-than-equal), [`localtime`](#localtime), [`lower`](#lower), [`lpad`](#lpad), [`ltrim`](#ltrim), [`md5`](#md5), [`mktime`](#mktime), [`multiply`](#multiply), [`nl2br`](#nl2br), [`notequal`](#notequal), [`now`](#now), [`ol`](#ol), [`ordinal`](#ordinal), [`paragraph`](#paragraph), [`pluralise`](#pluralise), [`prefix`](#prefix), [`query`](#query), [`random`](#random), [`regexp`](#regexp), [`regexpreplace`](#regexpreplace), [`render`](#render), [`replace`](#replace), [`round`](#round), [`rpad`](#rpad), [`rtrim`](#rtrim), [`sha1`](#sha1), [`sha256`](#sha256), [`sha512`](#sha512), [`split`](#split), [`startswith`](#startswith), [`string`](#string), [`striptags`](#striptags), [`substr`](#substr), [`subtract`](#subtract), [`suffix`](#suffix), [`time`](#time), [`timesince`](#timesince), [`timeuntil`](#timeuntil), [`title`](#title), [`trim`](#trim), [`truncate`](#truncate), [`truncatewords`](#truncatewords), [`type`](#type), [`ul`](#ul), [`upper`](#upper), [`urldecode`](#urldecode), [`urlencode`](#urlencode), [`uuid`](#uuid), [`values`](#values), [`wordcount`](#wordcount), [`wrap`](#wrap), [`year`](#year), [`yesno`](#yesno)
 
 ## `add`
 
@@ -98,7 +98,7 @@ func capfirst[T any](value T) T
 
 Capitalises the first letter of strings. Does not alter any other letters. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain, ignoring other types *(passed through)*.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ capfirst "this string. has two sentences." }}
@@ -338,7 +338,7 @@ func divide[D int|float64, T any](divisor D, value T) T
 
 Divides the `value` by the `divisor`. If `value` is a slice, array or map it will apply this conversion to any numeric elements that they contain. All values are first converted to floats, the operation is performed and then any **rounding is applied as necessary to return the item to its original type**.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 <!-- Integers: .Test is 10 -->
@@ -380,7 +380,7 @@ func divideceil[D int|float64, T any](divisor D, value T) T
 
 Divides the `value` by the `divisor`. If `value` is a slice, array or map it will apply this conversion to any numeric elements that they contain. All values are first converted to floats, the operation is performed and then any **rounding (ceil) is applied as necessary to return the item to its original type**.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 <!-- Integers: .Test is 10 -->
@@ -397,7 +397,7 @@ func dividefloor[D int|float64, T any](divisor D, value T) T
 
 Divides the `value` by the `divisor`. If `value` is a slice, array or map it will apply this conversion to any numeric elements that they contain. All values are first converted to floats, the operation is performed and then any **rounding (floor) is applied as necessary to return the item to its original type**.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 <!-- Integers: .Test is 10 -->
@@ -626,7 +626,7 @@ func htmldecode[T any](value T) T
 
 Converts HTML character-entity equivalents back into their literal, usable forms. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ htmldecode "&quot;string&quot; &lt;strong&gt;with&lt;/strong&gt; &#39;html entities&#x27; &amp;amp; other &#34;nasty&#x22; stuff" }}
@@ -641,7 +641,7 @@ func htmlencode[T any](value T) T
 
 Converts literal HTML special characters into safe, character-entity equivalents. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ htmlencode `"string" <strong>with</strong> 'html entities' &amp; other "nasty" stuff` }}
@@ -912,11 +912,29 @@ func lower[T any](value T) T
 
 Converts string text to lower case. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ lower "This string. Has TWO sentences." }}
 <!-- this string. has two sentences. -->
+```
+
+## `lpad`
+
+```go
+func lpad[T any](length int, pad string, value T) T
+```
+
+Pads the left of a `value` with the `pad` string until `value` is `length` runes long. It will treat HTML entities as a single rune. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
+
+Returns a new variable of the original `value` data type.
+
+```django
+{{ lpad 10 "." "Test" }}
+<!-- ......Test -->
+
+{{ "Test" | lpad 9 "&nbsp;." }}
+<!-- .&nbsp;.&nbsp;.&nbsp;.&nbsp;.Test -->
 ```
 
 ## `ltrim`
@@ -927,7 +945,7 @@ func ltrim[T any](remove string, value T) T
 
 Removes the passed characters from the left end of string values. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ ltrim " " "  This string. Has TWO sentences." }}
@@ -1030,7 +1048,7 @@ func nl2br[T any](value T) T
 
 Replaces all instances of `\n` (new line) with instances of `<br>` within `value`. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain. [`paragraph`](#paragraph) will perform a similar task in a more intelligent manner.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ nl2br "test\nstring" }} <!-- test<br>string -->
@@ -1141,7 +1159,7 @@ func paragraph[T any](value T) T
 
 Replaces all string instances of `\n+` (multiple new lines) with paragraph tags (`</p><p>`) and instances of `\n` (new line) with instances of `<br>` within `value`. Finally wraps the string in paragraph tags. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ paragraph "test\nstring" }} <!-- <p>test<br>string</p> -->
@@ -1189,7 +1207,7 @@ func prefix[T any](prefix ...string, value T) T
 
 Prefixes all strings within `value` with all strings within `prefix`. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ prefix "prefix " "value" }} <!-- prefix value -->
@@ -1212,7 +1230,7 @@ func query[T any](name string, value any, link T) T
 
 Acts upon URL query strings and allows parameters to be added / replaced within them *(the parameter being acted upon, `name`, will always be removed prior to the new value being added)*. If value is a slice / array, then an array variable will be created. If value is a map or struct, then a map variable will be created.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ query "test" "value" "/" }}
@@ -1285,7 +1303,7 @@ func regexpreplace[T any](find string, replace string, value T) T
 
 Replaces all instances of `find` regexp with instances of `replace` within `value` using [`regexp.ReplaceAllString`](https://pkg.go.dev/regexp#Regexp.ReplaceAllString). If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ regexpreplace "\n{2,}", "\n", "test\n\n\nstring" }}
@@ -1321,7 +1339,7 @@ func replace[T any](find string, replace string, value T) T
 Replaces all instances of `find` with instances of `replace` within `value`.
 If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ replace "find", "replace", "test find string where find is replaced" }}
@@ -1336,11 +1354,29 @@ func round[T any](precision int, value T) T
 
 Rounds floats to the passed number of decimal places (`precision`). If `value` is a slice, array or map it will apply this conversion to any float elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ round 3 3.14159 }}
 <!-- 3.1416 -->
+```
+
+## `rpad`
+
+```go
+func rpad[T any](length int, pad string, value T) T
+```
+
+Pads the right of a `value` with the `pad` string until `value` is `length` runes long. It will treat HTML entities as a single rune. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
+
+Returns a new variable of the original `value` data type.
+
+```django
+{{ rpad 10 "." "Test" }}
+<!-- Test...... -->
+
+{{ "Test" | rpad 9 "&nbsp;." }}
+<!-- Test&nbsp;.&nbsp;.&nbsp;.&nbsp;.&nbsp; -->
 ```
 
 ## `rtrim`
@@ -1351,7 +1387,7 @@ func rtrim[T any](remove string, value T) T
 
 Removes the passed characters from the right end of string values. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ rtrim " " "This string. Has TWO sentences.  " }}
@@ -1460,7 +1496,7 @@ func striptags[T any](value T) T
 
 Strips HTML tags from strings. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ striptags "<p>Remove <strong>all</strong> HTML tags</p>" }}
@@ -1477,7 +1513,7 @@ Extracts a substring from a `value` starting at the specified `offset` and inclu
 
 If `value` is a slice, array or map it will apply this conversion to any valid elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ substr 3 13 "<p>Remove P Tags</p>" }}
@@ -1556,7 +1592,7 @@ func suffix[T any](suffix ...string, value T) T
 
 Suffixes all strings within `value` with all strings within `suffix`. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ suffix " suffix" "value" }} <!-- value suffix -->
@@ -1645,7 +1681,7 @@ func title[T any](value T) T
 
 Converts string text to title case. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ title "This string. Has TWO sentences." }}
@@ -1660,7 +1696,7 @@ func trim[T any](remove string, value T) T
 
 Removes the passed characters from the ends of string values. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ trim " " "  This string. Has TWO sentences.  " }}
@@ -1681,7 +1717,7 @@ func truncate[T any](length int, value T) T
 
 Truncates strings to a certain number of characters. Is multi-byte safe and HTML aware. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ truncate 5 "hello world"}}
@@ -1699,7 +1735,7 @@ func truncatewords[T any](length int, value T) T
 
 Truncates strings to a certain number of words. Is multi-byte safe and HTML aware. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ truncatewords 3 "hello world how are you?"}}
@@ -1786,7 +1822,7 @@ func upper[T any](value T) T
 
 Converts string text to upper case. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ upper "This string. Has TWO sentences." }}
@@ -1801,7 +1837,7 @@ func urlDecode[T any](url T) T
 
 Converts URL character-entity equivalents back into their literal, URL-unsafe forms. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ urldecode "%21 %2A %27 %28 %29 %3B %3A %40 %26 %3D %2B %24 %2C %2F %3F %25 %23 %5B %5D" }}
@@ -1816,7 +1852,7 @@ func urlEncode[T any](url T) T
 
 Converts URL-unsafe characters into character-entity equivalents to allow the string to be used as part of a URL. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ urlencode "! * ' ( ) ; : @ & = + $ , / ? % # [ ]" }}
@@ -1878,7 +1914,7 @@ func wrap[T any](prefix string, suffix string, value T) T
 
 Wraps all strings within `value` with a prefix and suffix. If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
 
-Returns new variable of the original `value` data type.
+Returns a new variable of the original `value` data type.
 
 ```django
 {{ wrap "prefix " " suffix" "value" }} <!-- prefix value suffix -->

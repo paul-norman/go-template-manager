@@ -13,6 +13,7 @@ func TestAAFunctionsSetup(tester  *testing.T) {
 	haltOnErrors		= false
 	haltOnWarnings		= false
 
+	initRegexps()
 	testFormatTitle("functions")
 }
 
@@ -671,13 +672,13 @@ func TestHtmlEncode(tester *testing.T) {
 		{ 10.1, 10.1 },
 		{ -10.1, -10.1 },
 		{ "string without html", "string without html" },
-		{ "\"string\" <strong>with</strong> 'html entities' &amp; other \"nasty\" stuff", "&#34;string&#34; &lt;strong&gt;with&lt;/strong&gt; &#39;html entities&#39; &amp;amp; other &#34;nasty&#34; stuff" },
+		{ "\"string\" <strong>with</strong> 'html entities' &amp; other \"nasty\" stuff", "&quot;string&quot; &lt;strong&gt;with&lt;/strong&gt; &apos;html entities&apos; &amp;amp; other &quot;nasty&quot; stuff" },
 		{ []string{"string without html"}, []string{"string without html"} },
-		{ []string{"safe string", "\"string\" <strong>with</strong> 'html entities' &amp; other \"nasty\" stuff"}, []string{"safe string", "&#34;string&#34; &lt;strong&gt;with&lt;/strong&gt; &#39;html entities&#39; &amp;amp; other &#34;nasty&#34; stuff"} },
+		{ []string{"safe string", "\"string\" <strong>with</strong> 'html entities' &amp; other \"nasty\" stuff"}, []string{"safe string", "&quot;string&quot; &lt;strong&gt;with&lt;/strong&gt; &apos;html entities&apos; &amp;amp; other &quot;nasty&quot; stuff"} },
 		{ map[int]string{1: "string without html"}, map[int]string{1: "string without html"} },
-		{ map[int]string{1: "safe string", 2: "\"string\" <strong>with</strong> 'html entities' &amp; other \"nasty\" stuff"}, map[int]string{1: "safe string", 2: "&#34;string&#34; &lt;strong&gt;with&lt;/strong&gt; &#39;html entities&#39; &amp;amp; other &#34;nasty&#34; stuff"} },
-		{ struct{ String1, String2 string }{"string without html", "\"string\" <strong>with</strong> 'html entities' &amp; other \"nasty\" stuff"}, struct{ String1, String2 string }{"string without html", "&#34;string&#34; &lt;strong&gt;with&lt;/strong&gt; &#39;html entities&#39; &amp;amp; other &#34;nasty&#34; stuff"} },
-		{ struct{ string1, string2 string }{"string without html", "&#34;string&#34; &lt;strong&gt;with&lt;/strong&gt; &#39;html entities&#39; &amp;amp; other &#34;nasty&#34; stuff"}, struct{ string1, string2 string }{"", ""} },
+		{ map[int]string{1: "safe string", 2: "\"string\" <strong>with</strong> 'html entities' &amp; other \"nasty\" stuff"}, map[int]string{1: "safe string", 2: "&quot;string&quot; &lt;strong&gt;with&lt;/strong&gt; &apos;html entities&apos; &amp;amp; other &quot;nasty&quot; stuff"} },
+		{ struct{ String1, String2 string }{"string without html", "\"string\" <strong>with</strong> 'html entities' &amp; other \"nasty\" stuff"}, struct{ String1, String2 string }{"string without html", "&quot;string&quot; &lt;strong&gt;with&lt;/strong&gt; &apos;html entities&apos; &amp;amp; other &quot;nasty&quot; stuff"} },
+		{ struct{ string1, string2 string }{"string without html", "&quot;string&quot; &lt;strong&gt;with&lt;/strong&gt; &apos;html entities&apos; &amp;amp; other &quot;nasty&quot; stuff"}, struct{ string1, string2 string }{"", ""} },
 	}
 
 	testRunArgTests(htmlEncode, tests, tester)
@@ -1081,6 +1082,31 @@ func TestLower(tester *testing.T) {
 	testRunArgTests(lower, tests, tester)
 }
 
+func TestLpad(tester *testing.T) {
+	tests := []struct { input1, input2, input3, expected any } {
+		{ "10", "A", "test", "test" },
+		{ false, "A", "test", "test" },
+		{ 10.5, "A", "test", "test" },
+		{ 10, 1, "test", "test" },
+		{ 10, "A", 1, 1 },
+		{ 2, "A", "test", "test" },
+		{ 10, "A", "test", "AAAAAAtest" },
+		{ 10, "AB", "test", "ABABABtest" },
+		{ 10, "&amp;", "test", "&amp;&amp;&amp;&amp;&amp;&amp;test" },
+		{ 9, "AB", "test", "BABABtest" },
+		{ 9, "&amp;&amp;", "test", "&amp;&amp;&amp;&amp;&amp;test" },
+		{ 9, "A&amp;", "test", "&amp;A&amp;A&amp;test" },
+		{ 9, "&amp;B", "test", "B&amp;B&amp;Btest" },
+		{ 9, "&&", "test", "&&&&&test" },
+		{ 9, "&amp;&", "test", "&&amp;&&amp;&test" },
+		{ 10, "&amp;&", "test", "&amp;&&amp;&&amp;&test" },
+		{ 10, "&am", "test", "&am&amtest" },
+		{ 10, "A", []string{"test1", "test2"}, []string{"AAAAAtest1", "AAAAAtest2"} },
+	}
+
+	testRunArgTests(lpad, tests, tester)
+}
+
 func TestLtrim(tester *testing.T) {
 	tests := []struct { input1, input2, expected any } {
 		{ true, true, nil },
@@ -1449,6 +1475,27 @@ func TestRound(tester *testing.T) {
 	}
 
 	testRunArgTests(round, tests, tester)
+}
+
+func TestRpad(tester *testing.T) {
+	tests := []struct { input1, input2, input3, expected any } {
+		{ "10", "A", "test", "test" },
+		{ false, "A", "test", "test" },
+		{ 10.5, "A", "test", "test" },
+		{ 10, 1, "test", "test" },
+		{ 10, "A", 1, 1 },
+		{ 10, "A", "test", "testAAAAAA" },
+		{ 10, "AA", "test", "testAAAAAA" },
+		{ 10, "&amp;", "test", "test&amp;&amp;&amp;&amp;&amp;&amp;" },
+		{ 9, "AB", "test", "testABABA" },
+		{ 9, "&amp;", "test", "test&amp;&amp;&amp;&amp;&amp;" },
+		{ 9, "&amp;&amp;", "test", "test&amp;&amp;&amp;&amp;&amp;" },
+		{ 9, "A&amp;", "test", "testA&amp;A&amp;A" },
+		{ 9, "&amp;B", "test", "test&amp;B&amp;B&amp;" },
+		{ 10, "A", []string{"test1", "test2"}, []string{"test1AAAAA", "test2AAAAA"} },
+	}
+
+	testRunArgTests(rpad, tests, tester)
 }
 
 func TestRtrim(tester *testing.T) {

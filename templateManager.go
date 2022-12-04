@@ -1127,6 +1127,7 @@ func (tm *TemplateManager) parseVariableSlice(template string, name string, valu
 }
 
 func initRegexps() {
+	findHtmlEntity, _ 			:= regexp.Compile(`&[#a-zA-Z0-9]{0,8};`)
 	findAttributes, _			:= regexp.Compile(`(?s)([^=\s]+)\s*=\s*("[^"]+"|[\d\.\-]+)`)
 	findNumericSlice, _			:= regexp.Compile(`\s*([\-\d\.]+)\s*,`)
 	findBooleanSlice, _			:= regexp.Compile(`(?i)\s*(true|false)\s*,`)
@@ -1144,6 +1145,7 @@ func initRegexps() {
 	findSliceMap, _				:= regexp.Compile("[\"`']{1}(.*?[^\\\\])[\"`']{1}\\s*:\\s*(\\[.*?\\])\\s*,")
 
 	regexps = map[string]*regexp.Regexp{
+		"findHtmlEntity":			findHtmlEntity,
 		"findAttributes":			findAttributes,
 
 		"findNumericSlice":			findNumericSlice,

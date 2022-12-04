@@ -66,6 +66,7 @@ func getDefaultFunctions() map[string]any {
 		"lte":				lessThanEqual,
 		"localtime":		localtime,
 		"lower":			lower,
+		"lpad":				lpad,
 		"ltrim":			ltrim,
 		"md5":				md5Fn,
 		"mktime":			mktime,
@@ -84,6 +85,7 @@ func getDefaultFunctions() map[string]any {
 		"regexpreplace":	regexpReplaceAll,
 		"replace":			replaceAll,
 		"round":			round,
+		"rpad":				rpad,
 		"rtrim":			rtrim,
 		"sha1":				sha1Fn,
 		"sha256":			sha256Fn,
@@ -858,8 +860,8 @@ func htmlDecode(value reflect.Value) (reflect.Value, error) {
 
 	switch value.Kind() {
 		case reflect.String:
-			find	:= []string{ "&lt;", "&gt;", "&#34;", "&#x22;", "&quot;", "&#39;", "&#x27;", "&amp;" }
-			replace	:= []string{ "<",    ">",    `"`,     `"`,      `"`,      "'",     "'",      "&" }
+			find	:= []string{ "&lt;", "&gt;", "&#60;", "&#62;", "&#x03C;", "&#x03E;", "&quot;", "&#34;", "&#x22;", "&apos;", "&#39;", "&#x27;", "&amp;", "&#38;", "&#x26;" }
+			replace	:= []string{ "<",    ">",    "<",     ">",     "<",       ">",       `"`,      `"`,     `"`,      "'",      "'",     "'",      "&",     "&",     "&" }
 			replacer, err := replaceHelper(find, replace)
 			if err != nil {
 				err := logError(err.Error())
@@ -888,8 +890,8 @@ func htmlEncode(value reflect.Value) (reflect.Value, error) {
 
 	switch value.Kind() {
 		case reflect.String:
-			find	:= []string{ "<",    ">",    `"`,     `"`,      `"`,      "'",     "'",      "&" }
-			replace	:= []string{ "&lt;", "&gt;", "&#34;", "&#x22;", "&quot;", "&#39;", "&#x27;", "&amp;" }
+			find	:= []string{ "<",    ">",    `"`,      "'",      "&" }
+			replace	:= []string{ "&lt;", "&gt;", "&quot;", "&apos;", "&amp;" }
 			replacer, err := replaceHelper(find, replace)
 			if err != nil {
 				err := logError(err.Error())
@@ -1351,6 +1353,60 @@ Creates a slice from any number of values
 */
 func list(values ...reflect.Value) ([]reflect.Value, error) {
 	return values, nil
+}
+
+/*
+ func lpad(length int, pad string, value any) (any, error)
+Pads the left of a `value` string with the `pad` string until `value` is `length` runes long.
+If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
+*/
+func lpad(length reflect.Value, pad reflect.Value, value reflect.Value) (reflect.Value, error) {
+	sig := "lpad(length int, pad string, value any)"
+	
+	length	= reflectHelperUnpackInterface(length)
+	pad		= reflectHelperUnpackInterface(pad)
+	value	= reflectHelperUnpackInterface(value)
+
+	if !length.IsValid() || !reflectHelperIsInteger(length) {
+		err := logError(sig + " length must be an integer")
+		return value, err
+	}
+
+	if !pad.IsValid() || pad.Kind() != reflect.String {
+		err := logError(sig + " padding must be a string")
+		return value, err
+	}
+
+	if !value.IsValid() {
+		err := logError(sig + " value cannot be an untyped nil")
+		return value, err
+	}
+
+	l, _ := reflectHelperConvertToInt(length)
+
+	switch value.Kind() {
+		case reflect.String:
+			str				:= value.String()
+			paddingRequired	:= l - len(str)
+			if paddingRequired > 0 {
+				padSlice := splitStringEntities(pad.String())
+
+				// Add the runes cyclically, last to first
+				reset := len(padSlice) - 1
+				pos := reset
+				for i := 0; i < paddingRequired; i++ {
+					str = padSlice[pos] + str
+					pos--
+					if pos < 0 {
+						pos = reset
+					}
+				}
+			}
+
+			return reflect.ValueOf(str), nil
+	}
+
+	return recursiveHelper(value, reflect.ValueOf(lpad), length, pad)
 }
 
 /*
@@ -2025,6 +2081,61 @@ func round(precision reflect.Value, value reflect.Value) (reflect.Value, error) 
 	}
 
 	return recursiveHelper(value, reflect.ValueOf(round), precision)
+}
+
+/*
+ func rpad(length int, pad string, value any) (any, error)
+Pads the right of a `value` with the `pad` string until `value` is `length` runes long.
+If `value` is a slice, array or map it will apply this conversion to any string elements that they contain.
+*/
+func rpad(length reflect.Value, pad reflect.Value, value reflect.Value) (reflect.Value, error) {
+	sig := "rpad(length int, pad string, value any)"
+	
+	length	= reflectHelperUnpackInterface(length)
+	pad		= reflectHelperUnpackInterface(pad)
+	value	= reflectHelperUnpackInterface(value)
+
+	if !length.IsValid() || !reflectHelperIsInteger(length) {
+		err := logError(sig + " length must be an integer")
+		return value, err
+	}
+
+	if !pad.IsValid() || pad.Kind() != reflect.String {
+		err := logError(sig + " padding must be a string")
+		return value, err
+	}
+
+	if !value.IsValid() {
+		err := logError(sig + " value cannot be an untyped nil")
+		return value, err
+	}
+
+	l, _ := reflectHelperConvertToInt(length)
+
+	switch value.Kind() {
+		case reflect.String:
+			str				:= value.String()
+			paddingRequired	:= l - len(str)
+
+			if paddingRequired > 0 {
+				padSlice := splitStringEntities(pad.String())
+
+				// Add the runes cyclically, first to last
+				reset := len(padSlice) - 1
+				pos := 0
+				for i := 0; i < paddingRequired; i++ {
+					str += padSlice[pos]
+					pos++
+					if pos > reset {
+						pos = 0
+					}
+				}
+			}
+
+			return reflect.ValueOf(str), nil
+	}
+
+	return recursiveHelper(value, reflect.ValueOf(rpad), length, pad)
 }
 
 /*

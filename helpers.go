@@ -372,3 +372,63 @@ func replaceHelper(init ...any) (*strings.Replacer, error) {
 
 	return strings.NewReplacer(), fmt.Errorf("replaceHelper(): must pass an even number of find and replace variables to a string replacer when using two slices")
 }
+
+func splitStringEntities(str string) []string {
+	containsEntities := false
+	compressEntities	:= regexps["findHtmlEntity"].ReplaceAllString(str, "A")
+	if len(compressEntities) != len(str) {
+		containsEntities = true
+	}
+
+	slice := []string{}
+	if !containsEntities {
+		for _, v := range str {
+			slice = append(slice, string(v))
+		}
+	} else {
+		waitFor := []rune{}
+		collect := ""
+		for _, v := range str {
+			// Might be an entity, read ahead
+			if v == '&' && len(waitFor) == 0 {
+				waitFor = []rune{ ';' }
+				collect += string(v)
+				continue
+			}
+
+			// If we are waiting for a character, handle it here
+			if len(waitFor) > 0 {
+				if v == '&' || v == ' ' {
+					// Not an entity, collect runes individually
+					collect += string(v)
+					for _, v1 := range collect {
+						slice = append(slice, string(v1))
+					}
+					collect = ""
+					waitFor = []rune{}
+				} else if v == ';' {
+					collect += string(v)
+					slice = append(slice, collect)
+					collect = ""
+					waitFor = []rune{}
+				} else {
+					collect += string(v)
+				}
+				continue
+			}
+
+			// Normal characters
+			if len(waitFor) == 0 {
+				slice = append(slice, string(v))
+			}
+		}
+		// If we had a partial entity
+		if len(collect) > 0 {
+			for _, v1 := range collect {
+				slice = append(slice, string(v1))
+			}
+		}
+	}
+
+	return slice
+}
