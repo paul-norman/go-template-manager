@@ -167,6 +167,10 @@ tm.ExcludeDirectories([]string{"layouts", "partials"})
 tm.RemoveExcludedDirectory("layouts")
 ```
 
+### Functions
+
+See the [Built-in Functions](#built-in-functions) section.
+
 ## Global Options
 
 There are also several customisation options that apply globally to `templateManager` functions / use. These should be set **prior** to initialisation of the main store.
@@ -383,9 +387,7 @@ func add[T int|float64](numbers ...T) T {
 }
 ```
 
-It is not currently possible to return errors from functions, so any errors are output directly to STDOUT.
-
-If a function receives invalid input, it will stop execution of the entire template at the point that the error occurs, so it's important to write flexible functions, or be careful as to where they are called.
+In the `text/template` system, if a function receives invalid input, it will stop execution of the entire template at the point that the error occurs, so it's important to write flexible functions, or be careful as to how / where they are called.
 
 It might be safer to rewrite the above test function (`add()`) using the `reflect` package (used throughout `text/templates`) to allow for type checking and sensible return values for unsupported types *(e.g. do nothing, or return 0)*.
 
@@ -395,15 +397,20 @@ A selection of useful functions have been created to use in the templates to com
 
 [`add`](FUNCTIONS.md#add), [`bool`](FUNCTIONS.md#bool), [`capfirst`](FUNCTIONS.md#capfirst), [`collection`](FUNCTIONS.md#collection), [`concat`](FUNCTIONS.md#concat), [`contains`](FUNCTIONS.md#contains), [`cut`](FUNCTIONS.md#cut), [`date`](FUNCTIONS.md#date), [`datetime`](FUNCTIONS.md#datetime), [`default`](FUNCTIONS.md#default), [`divide`](FUNCTIONS.md#divide), [`divideceil`](FUNCTIONS.md#divideceil), [`dividefloor`](FUNCTIONS.md#dividefloor), [`divisibleby`](FUNCTIONS.md#divisibleby), [`dl`](FUNCTIONS.md#dl), [`endswith`](FUNCTIONS.md#endswith), [`equal`](FUNCTIONS.md#equal), [`first`](FUNCTIONS.md#first), [`firstof`](FUNCTIONS.md#firstof), [`float`](FUNCTIONS.md#float), [`formattime`](FUNCTIONS.md#formattime), [`gto`](FUNCTIONS.md#gto-greater-than), [`gte`](FUNCTIONS.md#gte-greater-than-equal), [`htmldecode`](FUNCTIONS.md#htmldecode), [`htmlencode`](FUNCTIONS.md#htmlencode), [`int`](FUNCTIONS.md#int), [`iterable`](FUNCTIONS.md#iterable), [`join`](FUNCTIONS.md#join), [`jsondecode`](FUNCTIONS.md#jsondecode), [`jsonencode`](FUNCTIONS.md#jsonencode), [`key`](FUNCTIONS.md#key), [`keys`](FUNCTIONS.md#keys), [`kind`](FUNCTIONS#kind), [`last`](FUNCTIONS.md#last), [`length`](FUNCTIONS.md#length), [`list`](FUNCTIONS.md#list), [`lto`](FUNCTIONS.md#lto-less-than), [`lte`](FUNCTIONS.md#lte-less-than-equal), [`localtime`](FUNCTIONS.md#localtime), [`lower`](FUNCTIONS.md#lower), [`lpad`](FUNCTIONS.md#lpad), [`ltrim`](FUNCTIONS.md#ltrim), [`md5`](FUNCTIONS.md#md5), [`mktime`](FUNCTIONS.md#mktime), [`multiply`](FUNCTIONS.md#multiply), [`nl2br`](FUNCTIONS.md#nl2br), [`notequal`](FUNCTIONS.md#notequal), [`now`](FUNCTIONS.md#now), [`ol`](FUNCTIONS.md#ol), [`ordinal`](FUNCTIONS.md#ordinal), [`paragraph`](FUNCTIONS.md#paragraph), [`pluralise`](FUNCTIONS.md#pluralise), [`prefix`](FUNCTIONS.md#prefix), [`query`](FUNCTIONS.md#query), [`random`](FUNCTIONS.md#random), [`regexp`](FUNCTIONS.md#regexp), [`regexpreplace`](FUNCTIONS.md#regexpreplace), [`render`](FUNCTIONS.md#render), [`replace`](FUNCTIONS.md#replace), [`round`](FUNCTIONS.md#round), [`rpad`](FUNCTIONS.md#rpad), [`rtrim`](FUNCTIONS.md#rtrim), [`sha1`](FUNCTIONS.md#sha1), [`sha256`](FUNCTIONS.md#sha256), [`sha512`](FUNCTIONS.md#sha512), [`split`](FUNCTIONS.md#split), [`startswith`](FUNCTIONS.md#startswith), [`string`](FUNCTIONS.md#string), [`striptags`](FUNCTIONS.md#striptags), [`substr`](FUNCTIONS.md#substr), [`subtract`](FUNCTIONS.md#subtract), [`suffix`](FUNCTIONS.md#suffix), [`time`](FUNCTIONS.md#time), [`timesince`](FUNCTIONS.md#timesince), [`timeuntil`](FUNCTIONS.md#timeuntil), [`title`](FUNCTIONS.md#title), [`trim`](FUNCTIONS.md#trim), [`truncate`](FUNCTIONS.md#truncate), [`truncatewords`](FUNCTIONS.md#truncatewords), [`type`](FUNCTIONS.md#type), [`ul`](FUNCTIONS.md#ul), [`upper`](FUNCTIONS.md#upper), [`urldecode`](FUNCTIONS.md#urldecode), [`urlencode`](FUNCTIONS.md#urlencode), [`uuid`](FUNCTIONS.md#uuid), [`values`](FUNCTIONS.md#values), [`wordcount`](FUNCTIONS.md#wordcount), [`wrap`](FUNCTIONS.md#wrap), [`year`](FUNCTIONS.md#year), [`yesno`](FUNCTIONS.md#yesno)
 
-They are all added by default, but can be removed if necessary *(e.g. before adding any functions of your own)*:
+They are all added by default, but can be removed or renamed if necessary *(e.g. before adding any functions of your own)*:
 
 ```go
+// Remove functions
 tm.RemoveAllFunctions()
 tm.RemoveFunction("striptags")
 tm.RemoveFunctions([]string{"yesno", "year"})
+
+// Rename functions
+tm.RenameFunction("concat", "cat")
+tm.RenameFunctions(map[string]string{ "equal": "equals", "lpad": "pad_left" })
 ```
 
-*(N.B. this does not remove the functions built in to `text/template` - [see guide](BASICS.md))*
+*(N.B. this does not remove / rename the functions built in to `text/template` - [see guide](BASICS.md))*
 
 ### Overloading `text/template` Functions
 
@@ -415,7 +422,7 @@ tm.OverloadFunctions()
 
 This will replace: `eq`, `ge`, `len`, `index`, `lt`, `le`, `ne`, `html` and `urlquery`.
 
-This can also be undone:
+This can also be undone for all or some of the functions overloaded:
 
 ```go
 tm.RemoveOverloadFunctions()
@@ -427,9 +434,9 @@ tm.RemoveFunctions([]string{"ge", "le"})
 
 The `text/template` package allows functions to return errors which will halt execution immediately, mid way through a document. This is often undesirable.
 
-For this reason, `templateManager` only outputs any data if no errors are encountered. In production environments, this is useful so as to display custom 500 pages. However, in development it is often desirable to have errors in the console, but allow execution to complete anyway *(so as better to see what is happening)*.
+For this reason, `templateManager` only outputs any data if no errors are encountered. In production environments, this is useful so as to be able to display custom 500 pages. However, in development it is often desirable to have errors in the console, but allow execution to complete anyway *(so as better to see what is happening)*.
 
-To achieve this, all `templateManager` functions generate errors in a manner where they can be controlled. There are two types of `error`, a warning and a full error. The latter is designed to alert the developer to them doing something likely undesirable *(e.g. trying to divide by a `nil` variable or zero)*, while a warning is designed to draw attention to something that only might be incorrect *(e.g. testing if an unset variable is equal to 1)*.
+To achieve this, all `templateManager` functions generate errors in a manner where they can be controlled. There are two types of `error`, a warning and a full error. The latter is designed to alert the developer to them doing something likely undesirable *(e.g. trying to divide by a `nil` variable or zero)*, while a warning is designed to draw attention to something that only *might* be incorrect *(e.g. testing if an unset variable is equal to 1)*.
 
 These special errors may be instructed to display in the console and also to halt the program if they are encountered. These are global options:
 

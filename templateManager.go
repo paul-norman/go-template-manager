@@ -442,6 +442,27 @@ func (tm *TemplateManager) RemoveOverloadFunctions() *TemplateManager {
 	return tm
 }
 
+// Allows any `TemplateManager` function to be renamed
+func (tm *TemplateManager) RenameFunction(current string, new string) *TemplateManager {
+	if fn, ok := tm.functions[current]; ok {
+		tm.mutex.Lock()
+		tm.functions[new] = fn
+		delete(tm.functions, current)
+		tm.mutex.Unlock()
+	}
+
+	return tm
+}
+
+// Allows multiple `TemplateManager` functions to be renamed at once
+func (tm *TemplateManager) RenameFunctions(functions map[string]string) *TemplateManager {
+	for current, new := range functions {
+		tm.RenameFunction(current, new)
+	}
+
+	return tm
+}
+
 // Executes a single template (`name`)
 func (tm *TemplateManager) Render(name string, params Params, writer io.Writer) error {
 	if ! tm.parsed {
