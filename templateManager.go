@@ -58,6 +58,7 @@ type TemplateManager struct {
 	extension				string
 	excludedDirectories		[]string
 	functions				map[string]any
+	missingKey				string
 	mutex					sync.RWMutex
 	debug					bool
 	reload					bool
@@ -85,6 +86,7 @@ func Init(directory string, extension string) *TemplateManager {
 		extension:				extension,
 		excludedDirectories:	[]string{"layouts", "partials", "components"},
 		functions:				make(map[string]any),
+		missingKey:				"zero",
 		debug:					false,
 		reload:					false,
 		parsed:					false,
@@ -99,6 +101,7 @@ func Init(directory string, extension string) *TemplateManager {
 
 // Creates a new `TemplateManager` struct instance using an embedded filesystem
 func InitEmbed(fileSystem embed.FS, directory string, extension string) *TemplateManager {
+	/*
 	templateManager := &TemplateManager{
 		templateType:			"text",
 		templates:				make(map[string]*Template),
@@ -113,6 +116,7 @@ func InitEmbed(fileSystem embed.FS, directory string, extension string) *Templat
 		extension:				extension,
 		excludedDirectories:	[]string{"layouts", "partials", "components"},
 		functions:				make(map[string]any),
+		missingKey:				"zero",
 		debug:					false,
 		reload:					false,
 		parsed:					false,
@@ -121,6 +125,9 @@ func InitEmbed(fileSystem embed.FS, directory string, extension string) *Templat
 	initRegexps()
 	templateManager.initRegexps()
 	templateManager.addDefaultFunctions()
+	*/
+	templateManager := Init(directory, extension)
+	templateManager.fileSystem = http.FS(fileSystem)
 
 	return templateManager
 }
@@ -283,6 +290,18 @@ func (tm *TemplateManager) ExcludeDirectory(directory string) *TemplateManager {
 	return tm
 }
 
+// Allows the `text/template` Option `missingkey` to be customised.
+// This setting controls what happens when an unset value is printed (i.e. {{ .Unset }}).
+// Valid Options: 
+// "default", "invalid" (output: "<no value>"), "zero" (output: "") or "error" (halts execution)
+func (tm *TemplateManager) MissingKey(option string) *TemplateManager {
+	if option == "default" || option == "invalid" || option == "zero" || option == "error" {
+		tm.missingKey = option
+	}
+
+	return tm
+}
+
 // Replaces standard `text/template` functions with the `TemplateManager` alternatives
 func (tm *TemplateManager) OverloadFunctions() *TemplateManager {
 	tm.AddFunctions(getOverloadFunctions())
@@ -342,7 +361,7 @@ func (tm *TemplateManager) Parse() error {
 	}
 
 	if tm.fileSystem != nil {
-		err = fsWalk.WalkDir(tm.fileSystem, "/", walk)
+		err = fsWalk.WalkDir(tm.fileSystem, tm.directory, walk)
 	} else {
 		err = filepath.WalkDir(tm.directory, walk)
 	}
@@ -581,8 +600,8 @@ func (tm *TemplateManager) initComponentRegexps() {
 			findComponentsCollectedDouble, _	:= regexp.Compile(`(?s)<x-` + component + `(\s+[^>]*)?\s*>(.*?)</x-` + component + `>`)
 			findComponentsCollectedSingle, _	:= regexp.Compile(`(?s)<x-` + component + `(\s+[^>]*)?\s*>`)
 
-			regexps[component + "_findComponentsDouble"]				= findComponentsDouble
-			regexps[component + "_findComponentsSingle"]				= findComponentsSingle
+			regexps[component + "_findComponentsDouble"]			= findComponentsDouble
+			regexps[component + "_findComponentsSingle"]			= findComponentsSingle
 			regexps[component + "_findComponentsCollectedDouble"]	= findComponentsCollectedDouble
 			regexps[component + "_findComponentsCollectedSingle"]	= findComponentsCollectedSingle
 		}
@@ -649,7 +668,7 @@ func (tm *TemplateManager) parseComponents() error {
 
 	for _, componentDirectory := range tm.componentDirectories {
 		if tm.fileSystem != nil {
-			err = fsWalk.WalkDir(tm.fileSystem, "/" + componentDirectory, walk)
+			err = fsWalk.WalkDir(tm.fileSystem, tm.directory + "/" + componentDirectory, walk)
 		} else {
 			err = filepath.WalkDir(tm.directory + "/" + componentDirectory, walk)
 		}
@@ -736,6 +755,7 @@ func (tm *TemplateManager) parseFileDependencies(path string, name string, direc
 // Configures a `template.Template` instance to use the `TemplateManager` settings
 func (tm *TemplateManager) configureNewTemplate(tmpl *Template) *Template {
 	tmpl.Delims(tm.delimiterLeft, tm.delimiterRight)
+	tmpl.Option("missingkey=" + tm.missingKey)
 	tmpl.Funcs(tm.functions)
 	tmpl.Funcs(map[string]any {
 		"render": func(name string, args ...any) string {

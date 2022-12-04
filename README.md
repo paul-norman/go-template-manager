@@ -563,7 +563,7 @@ The `LanguageCode` defined in `meta.html` is never needed, but would be used thr
 
 ## Embedded Example
 
-It is possible to embed the templates within the package (so that the files can be accessed using the embedded filesystem) using the `InitEmbed` method. This accepts an extra parameter that is the embedded files (`embed.FS`). The template folder directory value is optional, but to make the template naming behave identically to the `Init` version it is required to match the template directory name. Without it, all templates must use longer paths in block *(e.g. `/templates/partials/layout.html` and not `partials/layout.html`)*
+It is possible to embed the templates within the package *(so that the files can be accessed using the embedded filesystem)* using the `InitEmbed` method. This accepts an extra parameter that is the embedded files (`embed.FS`). The template folder directory value is optional, but to make the template naming behave identically to the `Init` version it is required to match the template directory name. Without it, all templates must use longer paths in block *(e.g. `/templates/partials/layout.html` and not `partials/layout.html`)*
 
 Just altering the main file from the simple example:
 

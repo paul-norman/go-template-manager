@@ -41,37 +41,11 @@ func (t *Template) InitHtml(name string) *HT.Template {
 	t.text = nil
 	return t.html
 }
-func (t *Template) NewSubTemplate(name string) *Template {
-	if t.Type() == "text" {
-		template := t.text.New(name)
-		return &Template{ nil, template }
-	} else if t.Type() == "html" {
-		template := t.html.New(name)
-		return &Template{ template, nil }
-	}
-	return t
-}
-func (t *Template) Type() string {
-	if t.text == nil && t.html == nil {
-		return "invalid"
-	} else if t.text == nil {
-		return "html"
-	}
-	return "text"
-}
 func (t *Template) Delims(left string, right string) *Template {
 	if t.Type() == "text" {
 		t.text.Delims(left, right)
 	} else if t.Type() == "html" {
 		t.html.Delims(left, right)
-	}
-	return t
-}
-func (t *Template) Funcs(funcs map[string]any) *Template {
-	if t.Type() == "text" {
-		t.text.Funcs(funcs)
-	} else if t.Type() == "html" {
-		t.html.Funcs(funcs)
 	}
 	return t
 }
@@ -91,16 +65,13 @@ func (t *Template) ExecuteTemplate(wr io.Writer, name string, data any) error {
 	}
 	return fmt.Errorf("templateManager Template not loaded correctly")
 }
-func (t *Template) Parse(text string) (*Template, error) {
-	var err error
+func (t *Template) Funcs(funcs map[string]any) *Template {
 	if t.Type() == "text" {
-		_, err = t.text.Parse(text)
+		t.text.Funcs(funcs)
 	} else if t.Type() == "html" {
-		_, err = t.html.Parse(text)
-	} else {
-		err = fmt.Errorf("templateManager Template not loaded correctly")
+		t.html.Funcs(funcs)
 	}
-	return t, err
+	return t
 }
 func (t *Template) Lookup(name string) *Template {
 	if t.Type() == "text" {
@@ -117,4 +88,41 @@ func (t *Template) Lookup(name string) *Template {
 		return &Template{ template, nil }
 	}
 	return nil
+}
+func (t *Template) NewSubTemplate(name string) *Template {
+	if t.Type() == "text" {
+		template := t.text.New(name)
+		return &Template{ nil, template }
+	} else if t.Type() == "html" {
+		template := t.html.New(name)
+		return &Template{ template, nil }
+	}
+	return t
+}
+func (t *Template) Option(opt ...string) *Template {
+	if t.Type() == "text" {
+		t.text.Option(opt...)
+	} else if t.Type() == "html" {
+		t.html.Option(opt...)
+	}
+	return t
+}
+func (t *Template) Parse(text string) (*Template, error) {
+	var err error
+	if t.Type() == "text" {
+		_, err = t.text.Parse(text)
+	} else if t.Type() == "html" {
+		_, err = t.html.Parse(text)
+	} else {
+		err = fmt.Errorf("templateManager Template not loaded correctly")
+	}
+	return t, err
+}
+func (t *Template) Type() string {
+	if t.text == nil && t.html == nil {
+		return "invalid"
+	} else if t.text == nil {
+		return "html"
+	}
+	return "text"
 }
