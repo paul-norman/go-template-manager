@@ -153,7 +153,7 @@ func testRunVarArgTests[T reflect.Value|any](fn func(...reflect.Value) (T, error
 	testFormatPassFail(name, passed, failed)
 }
 
-// Automatically determine which tests should fun for the variables passed in
+// Automatically determine which tests should run for the variables passed in
 func testRunArgTests(fn any, tests any, tester *testing.T) {
 	if real, ok := fn.(func(reflect.Value) (reflect.Value, error)); ok {
 		testRun1ArgTests(real, tests.([]struct{ input1, expected any }), tester)
@@ -186,6 +186,16 @@ func testRunArgTests(fn any, tests any, tester *testing.T) {
 	} else if real, ok := fn.(func(reflect.Value, reflect.Value, reflect.Value) (string, error)); ok {
 		testRun3ArgTests(real, tests.([]struct{ input1, input2, input3, expected any }), tester)
 	} else if real, ok := fn.(func(...reflect.Value) (reflect.Value, error)); ok {
+		testRunVarArgTests(real, tests.([]struct{ inputs []any; expected any }), tester)
+	} else if real, ok := fn.(func(...reflect.Value) (bool, error)); ok {
+		testRunVarArgTests(real, tests.([]struct{ inputs []any; expected any }), tester)
+	} else if real, ok := fn.(func(...reflect.Value) (int, error)); ok {
+		testRunVarArgTests(real, tests.([]struct{ inputs []any; expected any }), tester)
+	} else if real, ok := fn.(func(...reflect.Value) (float64, error)); ok {
+		testRunVarArgTests(real, tests.([]struct{ inputs []any; expected any }), tester)
+	} else if real, ok := fn.(func(...reflect.Value) (string, error)); ok {
+		testRunVarArgTests(real, tests.([]struct{ inputs []any; expected any }), tester)
+	} else if real, ok := fn.(func(...reflect.Value) ([]int, error)); ok {
 		testRunVarArgTests(real, tests.([]struct{ inputs []any; expected any }), tester)
 	} else {
 		tester.Errorf("\033[31mFAIL: \033[0mTests could not run!!")	

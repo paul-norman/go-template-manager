@@ -910,7 +910,7 @@ Creates an integer slice so as to spoof a `for` loop:
  {{ range $v := iterable 3 5 }} -> for v := 3; v < 5; v++
  {{ range $v := iterable 3 5 2 }} -> for v := 3; v < 5; v += 2
 */
-func iterable(values ...int) ([]int, error) {
+func iterable(values ...reflect.Value) ([]int, error) {
 	sig := "iterable(values ...int)"
 
 	if len(values) < 1 {
@@ -918,9 +918,9 @@ func iterable(values ...int) ([]int, error) {
 		return []int{}, err
 	}
 
-	start := 0
-	end := 1
-	increment := 1
+	start		:= reflect.ValueOf(0)
+	end			:= reflect.ValueOf(0)
+	increment	:= reflect.ValueOf(1)
 
 	switch len(values) {
 		case 1: 
@@ -934,24 +934,69 @@ func iterable(values ...int) ([]int, error) {
 			increment	= values[2]
 	}
 
-	if increment == 0 {
+	start		= reflectHelperUnpackInterface(start)
+	end			= reflectHelperUnpackInterface(end)
+	increment	= reflectHelperUnpackInterface(increment)
+
+	if !start.IsValid() || !reflectHelperIsInteger(start) {
+		err := logWarning(sig + " start value cannot be an untyped nil")
+		if err != nil {
+			return []int{}, err
+		}
+		logWarning(sig + " not halting on warnings, setting start to 0")
+		start = reflect.ValueOf(0)
+	}
+
+	if !end.IsValid() || !reflectHelperIsInteger(end) {
+		err := logWarning(sig + " end value cannot be an untyped nil")
+		if err != nil {
+			return []int{}, err
+		}
+		logWarning(sig + " not halting on warnings, setting end to 0")
+		end = reflect.ValueOf(0)
+	}
+
+	if !increment.IsValid() || !reflectHelperIsInteger(increment) {
+		err := logWarning(sig + " increment value cannot be an untyped nil")
+		if err != nil {
+			return []int{}, err
+		}
+		logWarning(sig + " not halting on warnings, setting increment to 1")
+		increment = reflect.ValueOf(1)
+	}
+
+	st, _ := reflectHelperConvertToInt(start)
+	en, _ := reflectHelperConvertToInt(end)
+	in, _ := reflectHelperConvertToInt(increment)
+
+	if in == 0 {
 		err := logError(sig + " increment value must not be zero")
 		return []int{}, err
 	}
 
-	if start > end && increment > 0 {
-		err := logError(sig + " if start > end, increment value must be negative")
-		return []int{}, err
+	if st > en && in > 0 {
+		if len(values) < 3 {
+			in = -1
+		} else {
+			err := logError(sig + " if start > end, increment value must be negative")
+			return []int{}, err
+		}
 	}
 
-	if end > start && increment < 0 {
+	if en > st && in < 0 {
 		err := logError(sig + " if end > start, increment value must be positive")
 		return []int{}, err
 	}
 
 	items := []int{}
-	for i := start; i < end; i += increment {
-		items = append(items, i)
+	if st > en && in < 0 {
+		for i := st; i > en; i += in {
+			items = append(items, i)
+		}
+	} else {
+		for i := st; i < en; i += in {
+			items = append(items, i)
+		}
 	}
 
 	return items, nil

@@ -685,24 +685,23 @@ func TestHtmlEncode(tester *testing.T) {
 }
 
 func TestIterable(tester *testing.T) {
-	fn := func(i []int, _ error) []int { return i }
-
-	tests := []struct { inputs []any; result any; expected any } {
-		{ []any{0}, fn(iterable(0)), []int{} },
-		{ []any{1}, fn(iterable(1)), []int{0} },
-		{ []any{5}, fn(iterable(5)), []int{0, 1, 2, 3, 4} },
-		{ []any{-5}, fn(iterable(-5)), []int{} },
-		{ []any{1, 3}, fn(iterable(1, 3)), []int{1, 2} },
-		{ []any{5, 9}, fn(iterable(5, 9)), []int{5, 6, 7, 8} },
-		{ []any{-5, -1}, fn(iterable(-5, -1)), []int{-5, -4, -3, -2} },
-		{ []any{1, 3, 2}, fn(iterable(1, 3, 2)), []int{1} },
-		{ []any{5, 9, 2}, fn(iterable(5, 9, 2)), []int{5, 7} },
-		{ []any{5, 9, 20}, fn(iterable(5, 9, 20)), []int{5} },
-		{ []any{-5, -1, -1}, fn(iterable(-5, -1, -1)), []int{} },
-		{ []any{-1, -5, -1}, fn(iterable(-1, -5, -1)), []int{} },
+	tests := []struct { inputs []any; expected any } {
+		{ []any{}, []int{} },
+		{ []any{0}, []int{} },
+		{ []any{1}, []int{0} },
+		{ []any{5}, []int{0, 1, 2, 3, 4} },
+		{ []any{-5}, []int{0, -1, -2, -3, -4} },
+		{ []any{1, 3}, []int{1, 2} },
+		{ []any{5, 9}, []int{5, 6, 7, 8} },
+		{ []any{-5, -1}, []int{-5, -4, -3, -2} },
+		{ []any{1, 3, 2}, []int{1} },
+		{ []any{5, 9, 2}, []int{5, 7} },
+		{ []any{5, 9, 20}, []int{5} },
+		{ []any{-5, -1, -1}, []int{} },
+		{ []any{-1, -5, -1}, []int{-1, -2, -3, -4} },
 	}
 
-	testRunTests("iterable", tests, tester)
+	testRunArgTests(iterable, tests, tester)
 }
 
 func TestJoin(tester *testing.T) {

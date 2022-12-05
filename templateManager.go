@@ -101,31 +101,6 @@ func Init(directory string, extension string) *TemplateManager {
 
 // Creates a new `TemplateManager` struct instance using an embedded filesystem
 func InitEmbed(fileSystem embed.FS, directory string, extension string) *TemplateManager {
-	/*
-	templateManager := &TemplateManager{
-		templateType:			"text",
-		templates:				make(map[string]*Template),
-		params:					make(map[string]map[string]any),
-		descendants:			make(map[string][]string),
-		componentDirectories:	[]string{"components"},
-		components:				make(map[string]string),
-		delimiterLeft:			"{{",
-		delimiterRight:			"}}",
-		directory:				"/" + strings.TrimLeft(directory, " /"),
-		fileSystem:				http.FS(fileSystem),
-		extension:				extension,
-		excludedDirectories:	[]string{"layouts", "partials", "components"},
-		functions:				make(map[string]any),
-		missingKey:				"zero",
-		debug:					false,
-		reload:					false,
-		parsed:					false,
-	}
-
-	initRegexps()
-	templateManager.initRegexps()
-	templateManager.addDefaultFunctions()
-	*/
 	templateManager := Init(directory, extension)
 	templateManager.fileSystem = http.FS(fileSystem)
 
