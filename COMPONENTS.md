@@ -75,9 +75,9 @@ So the example `Youtube` component above might look like this:
 Components may call other components if desirable. So if you had a `Vimeo` component and a `Youtube` component, both could call a `VideoIframe` component internally. For example the `Youtube` component could be refactored to something like:
 
 ```html
-{{- $src := "https://www.youtube-nocookie.com/embed/" | suffix .Id -}}
-{{- with .Language -}} {{ $src = printf "%v&hl=%v&cc_lang_pref=%v" $src . . }} {{- end -}}
-{{- with .Subtitles -}} {{ $src = printf "%v&cc_load_policy=%v" $src . }} {{- end -}}
+{{- $src := "https://www.youtube-nocookie.com/embed/" | suffix .Id "?rel=0&autoplay=0&loop=0" -}}
+{{- with .Language -}} {{ $src = suffix "&hl=" . "&cc_lang_pref=" . }} {{- end -}}
+{{- with .Subtitles -}} {{ $src = suffix "&cc_load_policy=" . }} {{- end -}}
 <VideoIframe src="{{ $src }}">
 ```
 
@@ -132,7 +132,7 @@ It is not always desirable to render wrapped information in its entirety or in t
 </Tabset>
 ```
 
-It is likely that the `Tab` items will need to be wrapped as will the `TabContent` items and they could not simply be rendered as is *(or at least not without heavy JavaScript support)*. To solve this, the nested components may be prefixed with an `x-` string to signify that we wish to collect them into a variable for later output:
+It is likely that the `Tab` items will need to be wrapped as will the `TabContent` items and they could not simply be rendered as is *(or at least not without heavy JavaScript support)*. To solve this, the nested components may be prefixed with an `x-` string to signify that we wish to collect them for later output:
 
 ```html
 <Tabset>
@@ -160,8 +160,8 @@ This could now be re-written as:
 
 and function identically.
 
-In addition to all standard data passed to these collected, nested templates, they are also assigned two additional variables: `.ParentUuid` and `.ParentPosition`.
+In addition to all standard data passed to these nested templates, they are also assigned two additional variables: `.ParentUuid` and `.ParentPosition`.
 
-`.ParentUuid` is the uuid of the parent component, and `.ParentPosition` is the index that the specific component occupies in the string slice passed to the parent component *(i.e. the position of the item within the `.Tab` slice)*.
+`.ParentUuid` is the uuid of the parent component, and `.ParentPosition` is the index that the specific component occupies in the string slice passed to the parent component *(e.g. the position of the item within the `.Tab` slice)*.
 
 These variables should allow tricks such as the CSS checkbox hack to be implemented without assigning names / ids to all nested items, keeping the code as clean as possible.

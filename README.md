@@ -135,7 +135,7 @@ tm.Delimiters("{%", "%}")
 
 ### Debugging
 
-During development it's often useful to see what is happening. Enabling debug mode outputs a log showing what happens upon parsing *(and forces warnings and errors to be shown in the log)*:
+During development it's often useful to see what is happening. Enabling debug mode outputs console entries showing what happens upon parsing *(and forces warnings and errors to be shown in the console)*:
 
 ```go
 tm.Debug(true)
@@ -149,13 +149,13 @@ During development it's often useful to be able to change template files and not
 tm.Reload(true)
 ```
 
-*(N.B. this does not work with an embedded file system as the changes are not picked up until next build)*
+*(N.B. this does not work with an embedded file system as the changes are not picked up until the next build)*
 
 ### Excluding Directories
 
-It is most efficient if the parser only runs over "entry" templates (that is those that will be called directly). For this reason it's best to exclude all directories *(within the designated templates folder)* from this process.
+It is most efficient if the parser only runs over "entry" templates *(i.e those which will be called directly)*. For this reason it's best to exclude all directories *(within the designated templates folder)* which do not contain entry templates from this process.
 
-By default, two directories *("layouts" and "partials")* are already excluded.
+By default, three directories *("layouts", "partials" and "components")* are already excluded.
 
 ```go
 // Remove directories from parsing
@@ -244,7 +244,7 @@ To keep all front end management in one place it is possible to define ***simple
 {{ var "varName" }} var value {{ end }}
 ```
 
-These are parsed by regular expressions and turned into a "best" guess version of what they represent *(leading / trailing spaces are always trimmed)*.
+These are parsed by regular expressions and turned into a "best-guess" version of what they represent *(leading / trailing spaces are always trimmed)*.
 
 **The following represents all possible types that may be declared this way:** *(no deeper nesting than is explicitly shown is currently possible)*
 
@@ -298,58 +298,58 @@ These are parsed by regular expressions and turned into a "best" guess version o
 
 `maps` *(Does not support nested maps nor maps of slices)*
 ```django
-<!-- creates a type map[int]int (N.B. Quotes) -->
-{{ var "MapIntInt" }} {"1": 1, "10": -10, "100": 100} {{ end }}
+<!-- creates a type map[int]int -->
+{{ var "MapIntInt" }} {1: 1, 10: -10, 100: 100} {{ end }}
 
-<!-- creates a type map[int]float64 (N.B. Quotes) -->
-{{ var "MapIntFloat" }} {"1": 1.0, "10": -10.0, "100": 100.0} {{ end }}
+<!-- creates a type map[int]float64  -->
+{{ var "MapIntFloat" }} {1: 1.0, 10: -10.0, 100: 100.0} {{ end }}
 
-<!-- creates a type map[int]bool (N.B. Quotes) -->
-{{ var "MapIntBool" }} {"0": false, "1": true} {{ end }}
+<!-- creates a type map[int]bool -->
+{{ var "MapIntBool" }} {0: false, 1: true} {{ end }}
 
-<!-- creates a type map[int]string (N.B. Quotes) -->
-{{ var "MapIntString" }} {"1": "string 1", "2": "string 2"} {{ end }}
+<!-- creates a type map[int]string -->
+{{ var "MapIntString" }} {1: "string 1", 2: "string 2"} {{ end }}
 
-<!-- creates a type map[float64]int (N.B. Quotes) -->
-{{ var "MapFloatInt" }} {"1.1": 1, "10.10": -10, "100.100": 100} {{ end }}
+<!-- creates a type map[float64]int -->
+{{ var "MapFloatInt" }} {1.1: 1, 10.10: -10, 100.100: 100} {{ end }}
 
-<!-- creates a type map[float64]float64 (N.B. Quotes) -->
-{{ var "MapFloatFloat" }} {"1.0": 1.0, "10.0": -10.0, "100.0": 100.0} {{ end }}
+<!-- creates a type map[float64]float64 -->
+{{ var "MapFloatFloat" }} {1.0: 1.0, 10.0: -10.0, 100.0: 100.0} {{ end }}
 
-<!-- creates a type map[float64]bool (N.B. Quotes) -->
-{{ var "MapFloatBool" }} {"0.0": false, "1.0": true} {{ end }}
+<!-- creates a type map[float64]bool -->
+{{ var "MapFloatBool" }} {0.0: false, 1.0: true} {{ end }}
 
-<!-- creates a type map[float64]string (N.B. Quotes) -->
-{{ var "MapFloatString" }} {"1.0": "string 1.0", "2.0": "string 2.0"} {{ end }}
+<!-- creates a type map[float64]string -->
+{{ var "MapFloatString" }} {1.0: "string 1.0", 2.0: "string 2.0"} {{ end }}
 
-<!-- creates a type map[bool]int (N.B. Quotes) -->
-{{ var "MapBoolInt" }} {"true": 1, "false": 0} {{ end }}
+<!-- creates a type map[bool]int -->
+{{ var "MapBoolInt" }} {true: 1, false: 0} {{ end }}
 
-<!-- creates a type map[bool]float64 (N.B. Quotes) -->
-{{ var "MapBoolFloat" }} {"true": 1.0, "false": 0.0} {{ end }}
+<!-- creates a type map[bool]float64 -->
+{{ var "MapBoolFloat" }} {true: 1.0, false: 0.0} {{ end }}
 
-<!-- creates a type map[bool]bool (N.B. Quotes) -->
-{{ var "MapBoolBool" }} {"false": true, "true": false} {{ end }}
+<!-- creates a type map[bool]bool -->
+{{ var "MapBoolBool" }} {false: true, true: false} {{ end }}
 
-<!-- creates a type map[bool]string (N.B. Quotes) -->
-{{ var "MapBoolString" }} {"false": "no", "true": "yes"} {{ end }}
+<!-- creates a type map[bool]string -->
+{{ var "MapBoolString" }} {false: "no", true: "yes"} {{ end }}
 
-<!-- creates a type map[string]int (N.B. Quotes) -->
+<!-- creates a type map[string]int -->
 {{ var "MapStringInt" }} {"key1": 1, "key2": 2, "key3": 3} {{ end }}
 
-<!-- creates a type map[string]float64 (N.B. Quotes) -->
+<!-- creates a type map[string]float64 -->
 {{ var "MapStringFloat" }} {"key1": 1.0, "key2": 2.0, "key3": 3.0} {{ end }}
 
-<!-- creates a type map[string]bool (N.B. Quotes) -->
+<!-- creates a type map[string]bool -->
 {{ var "MapStringBool" }} {"key0": false, "key1": true} {{ end }}
 
-<!-- creates a type map[string]string (N.B. Quotes) -->
+<!-- creates a type map[string]string -->
 {{ var "MapStringString" }} {"key1": "string 1", "key2": "string 2"} {{ end }}
 ```
 
 ### Attaching Variables to Templates
 
-As an alternative to creating variables in the templates directly, variables can be directly assigned to any template **before `Parse()` is called** *(and they will be picked up by all bundles which use the file)*. This offers more freedom to define variable types.
+As an alternative to creating variables in the templates directly *(or at the `Render()` stage)*, variables can be directly assigned to any template **before `Parse()` is called** *(and they will be picked up by all bundles which use the file)*. This offers more freedom to define variable types.
 
 ```go
 tm.AddParam("test.html", "MyMap", map[string][]int{"test": []int{1, 2, 3})
@@ -367,7 +367,7 @@ tm.AddParams("layout/public.html", templateManager.Params{"MyInt": 123, "MyFloat
 
 this way, all files that extend that layout will have these variables.
 
-**N.B. This method has a lower precedence in the hierarchy than defining variables directly into the template files and the same variables defined there will override these**
+**N.B. This method has a lower precedence in the hierarchy than defining variables directly into the template files *(and at `Render()` time)* and the same variables defined there will override these.**
 
 ## Creating Functions
 
@@ -389,11 +389,11 @@ func add[T int|float64](numbers ...T) T {
 
 In the `text/template` system, if a function receives invalid input, it will stop execution of the entire template at the point that the error occurs, so it's important to write flexible functions, or be careful as to how / where they are called.
 
-It might be safer to rewrite the above test function (`add()`) using the `reflect` package (used throughout `text/templates`) to allow for type checking and sensible return values for unsupported types *(e.g. do nothing, or return 0)*.
+It might be safer to rewrite the above test function (`add()`) using the `reflect` package *(which is used throughout `text/templates` and `templateManager`)* to allow for type checking and sensible return values for unsupported types *(e.g. do nothing, or return 0)*.
 
 ## Built-in Functions
 
-A selection of useful functions have been created to use in the templates to compliment those already built in to `text/template`. They are documented in their own [guide](FUNCTIONS.md), quick links:
+A selection of useful functions have been created to use in the templates to compliment those already built in to `text/template`. These are all optimised for "pipeline" use *(i.e. receive their principle argument last)*. They are documented in their own [guide](FUNCTIONS.md), quick links:
 
 [`add`](FUNCTIONS.md#add), [`bool`](FUNCTIONS.md#bool), [`capfirst`](FUNCTIONS.md#capfirst), [`collection`](FUNCTIONS.md#collection), [`concat`](FUNCTIONS.md#concat), [`contains`](FUNCTIONS.md#contains), [`cut`](FUNCTIONS.md#cut), [`date`](FUNCTIONS.md#date), [`datetime`](FUNCTIONS.md#datetime), [`default`](FUNCTIONS.md#default), [`divide`](FUNCTIONS.md#divide), [`divideceil`](FUNCTIONS.md#divideceil), [`dividefloor`](FUNCTIONS.md#dividefloor), [`divisibleby`](FUNCTIONS.md#divisibleby), [`dl`](FUNCTIONS.md#dl), [`endswith`](FUNCTIONS.md#endswith), [`equal`](FUNCTIONS.md#equal), [`first`](FUNCTIONS.md#first), [`firstof`](FUNCTIONS.md#firstof), [`float`](FUNCTIONS.md#float), [`formattime`](FUNCTIONS.md#formattime), [`gto`](FUNCTIONS.md#gto-greater-than), [`gte`](FUNCTIONS.md#gte-greater-than-equal), [`htmldecode`](FUNCTIONS.md#htmldecode), [`htmlencode`](FUNCTIONS.md#htmlencode), [`int`](FUNCTIONS.md#int), [`iterable`](FUNCTIONS.md#iterable), [`join`](FUNCTIONS.md#join), [`jsondecode`](FUNCTIONS.md#jsondecode), [`jsonencode`](FUNCTIONS.md#jsonencode), [`key`](FUNCTIONS.md#key), [`keys`](FUNCTIONS.md#keys), [`kind`](FUNCTIONS#kind), [`last`](FUNCTIONS.md#last), [`length`](FUNCTIONS.md#length), [`list`](FUNCTIONS.md#list), [`lto`](FUNCTIONS.md#lto-less-than), [`lte`](FUNCTIONS.md#lte-less-than-equal), [`localtime`](FUNCTIONS.md#localtime), [`lower`](FUNCTIONS.md#lower), [`lpad`](FUNCTIONS.md#lpad), [`ltrim`](FUNCTIONS.md#ltrim), [`md5`](FUNCTIONS.md#md5), [`mktime`](FUNCTIONS.md#mktime), [`multiply`](FUNCTIONS.md#multiply), [`nl2br`](FUNCTIONS.md#nl2br), [`notequal`](FUNCTIONS.md#notequal), [`now`](FUNCTIONS.md#now), [`ol`](FUNCTIONS.md#ol), [`ordinal`](FUNCTIONS.md#ordinal), [`paragraph`](FUNCTIONS.md#paragraph), [`pluralise`](FUNCTIONS.md#pluralise), [`prefix`](FUNCTIONS.md#prefix), [`query`](FUNCTIONS.md#query), [`random`](FUNCTIONS.md#random), [`regexp`](FUNCTIONS.md#regexp), [`regexpreplace`](FUNCTIONS.md#regexpreplace), [`render`](FUNCTIONS.md#render), [`replace`](FUNCTIONS.md#replace), [`round`](FUNCTIONS.md#round), [`rpad`](FUNCTIONS.md#rpad), [`rtrim`](FUNCTIONS.md#rtrim), [`sha1`](FUNCTIONS.md#sha1), [`sha256`](FUNCTIONS.md#sha256), [`sha512`](FUNCTIONS.md#sha512), [`split`](FUNCTIONS.md#split), [`startswith`](FUNCTIONS.md#startswith), [`string`](FUNCTIONS.md#string), [`striptags`](FUNCTIONS.md#striptags), [`substr`](FUNCTIONS.md#substr), [`subtract`](FUNCTIONS.md#subtract), [`suffix`](FUNCTIONS.md#suffix), [`time`](FUNCTIONS.md#time), [`timesince`](FUNCTIONS.md#timesince), [`timeuntil`](FUNCTIONS.md#timeuntil), [`title`](FUNCTIONS.md#title), [`trim`](FUNCTIONS.md#trim), [`truncate`](FUNCTIONS.md#truncate), [`truncatewords`](FUNCTIONS.md#truncatewords), [`type`](FUNCTIONS.md#type), [`ul`](FUNCTIONS.md#ul), [`upper`](FUNCTIONS.md#upper), [`urldecode`](FUNCTIONS.md#urldecode), [`urlencode`](FUNCTIONS.md#urlencode), [`uuid`](FUNCTIONS.md#uuid), [`values`](FUNCTIONS.md#values), [`wordcount`](FUNCTIONS.md#wordcount), [`wrap`](FUNCTIONS.md#wrap), [`year`](FUNCTIONS.md#year), [`yesno`](FUNCTIONS.md#yesno)
 
@@ -458,11 +458,11 @@ TM.SetConsoleErrors(false)
 TM.SetConsoleWarnings(false)
 ```
 
-Sadly, there is no means of getting detailed information *(i.e. template name, line number etc)* for errors, so this is only provided if an error bubbles back up to the `Render` function and is caught there *(thus if haltOnError is disabled, these are missing, though shouldn't be a problem during development)*.
+Sadly, there is no means of getting detailed information *(i.e. template name, line number etc)* for errors, so this is only provided if an error bubbles back up to the `Render` function and is caught there. *(N.B. if haltOnError is disabled, these bubbled errors are missing, but that shouldn't be a problem during development as they will be generated as pages are used).*
 
 ## Simple Example
 
-To illustrate the `templateManager` usage, a trivial example with 5 files can be used:
+To illustrate `templateManager` usage, a trivial example with 5 files can be used:
 
 `main.go`
 ```go
@@ -504,30 +504,30 @@ func test(w http.ResponseWriter, r *http.Request) {
 
 {{ var "languageCode" }} en-GB {{ end }}
 
-{{ define "title" }}{{ .Title }} Title{{ end }}
+{{- define "title" -}}{{ .Title }} Title {{- end -}}
 
-{{ define "content" }}
+{{- define "content" -}}
 <section>
 	<div>
 		<h1>{{ .Title }}</h1>
 	</div>
 </section>
-{{ end }}
+{{- end -}}
 ```
 
 `templates/test.html`
 ```django
 {{ extends "layouts/public.html" }}
 
-{{ define "description" }}{{ .Title }} Description{{ end }}
+{{- define "description" -}}{{ .Title }} Description{{- end -}}
 
-{{ define "content" }}
+{{- define "content" -}}
 <section>
 	<div>
 		<h1>{{ .Title }}</h1>
 	</div>
 </section>
-{{ end }}
+{{- end -}}
 ```
 
 `templates/layouts/public.html`
@@ -536,12 +536,12 @@ func test(w http.ResponseWriter, r *http.Request) {
 <!DOCTYPE html lang="{{ .LanguageCode }}">
 <html>
 <head>
-	<title>{{ block "title" "" }}default title{{ end }}</title>
-	<meta name="description" value="{{ block "description" "" }}default description{{ end }}">
+	<title>{{ block "title" "" -}} default title {{- end }}</title>
+	<meta name="description" value="{{ block "description" "" -}} default description {{- end }}">
 	{{ template "partials/meta.html" . }}
 </head>
 <body>
-	{{- block "content" . }}default content{{ end -}}
+	{{- block "content" . -}} default content {{- end -}}
 </body>
 </html>
 ```
@@ -563,7 +563,7 @@ The `LanguageCode` defined in `meta.html` is never needed, but would be used thr
 
 ## Embedded Example
 
-It is possible to embed the templates within the package *(so that the files can be accessed using the embedded filesystem)* using the `InitEmbed` method. This accepts an extra parameter that is the embedded files (`embed.FS`). The template folder directory value is optional, but to make the template naming behave identically to the `Init` version it is required to match the template directory name. Without it, all templates must use longer paths in block *(e.g. `/templates/partials/layout.html` and not `partials/layout.html`)*
+It is possible to embed the templates within the package *(so that the files can be accessed using the embedded filesystem)* using the `InitEmbed` method. This accepts an extra parameter that is the embedded files (`embed.FS`).
 
 Just altering the main file from the simple example:
 

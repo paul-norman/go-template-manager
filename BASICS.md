@@ -1,8 +1,8 @@
 # Basic Usage of `text/templates` Package
 
-Go has a built in templating engine in the standard library, the `text/template` package ([docs](https://pkg.go.dev/text/template)).
+Go has a built in templating engine package in the standard library: `text/template` ([docs](https://pkg.go.dev/text/template)). The `html/template` ([docs](https://pkg.go.dev/html/template)) package extends this for use on the web.
 
-This short guide does not cover how to configure these templates *(what `templateManager` simplifies)*, but rather just how to use them.
+This short guide does not cover how to configure these templates *(this is what `templateManager` simplifies)*, but rather just how to use them once they are configured.
 
 ## Contents
 
@@ -40,7 +40,7 @@ and the special `.` (dot) operator which allows access to variables in any given
 To use any of these keywords, special delimiters are wrapped around them:
 
 ```django
-{{ template "layout.html" . }}
+{{ template "layout.html" . }} <!-- notice the dot! -->
 ```
 
 Some statements also require an `{{ end }}` tag:
@@ -53,7 +53,7 @@ Some statements also require an `{{ end }}` tag:
 
 It is often clearer to write statements such as the above `define` statement with space before and after the content. However, this will result in physical whitespace characters being added to the content *(often undesirably)*.
 
-To trigger stripping of whitespace, the delimiters may have a hyphen attached to them to trigger that all whitespace will be removed from that direction *(until the next non-whitespace character)*:
+To trigger stripping of whitespace, the delimiters may have a hyphen attached to them to trigger whitespace removal in that direction *(until the next non-whitespace character)*:
 
 ```django
 some {{ block "name1" }} content {{ end }} here
@@ -83,12 +83,12 @@ Code comments are useful, but when working with HTML, native comments are visibl
 It is sometimes a good idea to strip whitespace from around them too as they have likely been inserted between page tags:
 
 ```django
-{{- /* A comment */ -}}
+{{- /* A comment */ -}} <!-- note the extra spaces -->
 ```
 
 ### Output in Delimiters
 
-Literal values (e.g. ints or strings) may be placed inside delimiters so as to allow whitespace stripping or for their value to be used as an input to functions.
+Literal values *(e.g. ints or strings)* may be placed inside delimiters so as to allow whitespace stripping or for their value to be used as an input to functions.
 
 ```django
 {{ "hello" }} <!-- hello -->
@@ -106,7 +106,7 @@ Whether it is a literal or a variable, the output of delimited tags is equivalen
 fmt.Print(variable_name)
 ```
 
- *(i.e. can output anything)*.
+ *(i.e. anything can be output)*.
 
 ### Local Variables
 
@@ -174,7 +174,7 @@ nil                       => false
 
 ```django
 {{ with .Variable }}
-	Dot is now the value of ".Variable" {{.}}
+	{{.}} now means .Variable
 {{ end }}
 ```
 
@@ -182,7 +182,7 @@ Like `if`, this can also be paired with an optional `else` statement:
 
 ```django
 {{ with .Variable }}
-	{{.}} now means ".Variable" 
+	{{.}} now means .Variable
 {{ else }}
 	Dot is still as it was outside this loop
 {{ end }}
@@ -205,14 +205,14 @@ If the `range` keyword is passed an array, slice, map, or channel it will iterat
 ```django
 <ul>
 {{ range .Slice }}
-	<li>{{ . }}</li>
+	<li>{{.}}</li>
 {{ end }}
 </ul>
 
 {{ range .Slice }}
 	<ul>
 	{{ range .Slice }}
-		<li>{{ . }}</li>
+		<li>{{.}}</li>
 	{{ end }}
 	</ul>
 {{ else }}
@@ -240,7 +240,7 @@ The `template` block is an instruction to execute the named template and return 
 {{ template "template_name" }}
 ```
 
-This renders the "template_name" template without any variables passed to it **(and it must not require any)**. If the template requires some / all of the original input data it's possible to pass it through to the nested template.
+This renders the "template_name" template without any variables passed to it **(and thus it must not require any)**. If the template requires some / all of the original input data it's possible to pass it through to the nested template.
 
 This renders the "template_name" template with ALL of the current context's data passed to it:
 
@@ -289,13 +289,13 @@ But it could equally be overwritten using any define block:
 
 ## Built-in Functions
 
-To support the logic of the templates, there are a small selection of useful functions. The format of these is that the functions name is written, followed by the arguments that it accepts:
+To support the logic of the templates, there are a small selection of useful functions. The format of these is that the function's name is written, followed by the arguments that it accepts *(in order)*:
 
 ```go
 {{ function_name "arg1" "arg2" }}
 ```
 
-Functions can be chained together using the `|` (pipe) operator. The result of the prior function (or literal statement) is passed to the next in the chain as the **final** argument:
+Functions can be chained together using the `|` (pipe) operator *(called "pipelines")*. The result of the prior function *(or literal statement)* is passed to the next in the chain as the **final** argument:
 
 ```go
 {{ "input" | func1 "arg1" "arg2" | func2 }}
@@ -309,7 +309,7 @@ result2 := func2(result1)
 fmt.Print(result2)
 ```
 
-All template functions are written in this manner.
+All template functions are called in this manner.
 
 ### Boolean Operators
 
@@ -376,6 +376,16 @@ if le x y // if x <= y
 if ge x y // if x >= y
 ```
 
+These functions in particular can get confusing when using the idiomatic pipelined nature of the `text/template` system. For example:
+
+```django
+{{ if lt 16 24 }}
+<!-- if 16 < 24 (true) -->
+
+{{ if 24 | lt 16 }}
+<!-- if 16 < 24 (true) -->
+```
+
 ### Formatting Functions
 
 These functions allow effective and safe output of all data types.
@@ -384,13 +394,33 @@ These functions allow effective and safe output of all data types.
 
 Alias for `fmt.Sprint`
 
+```django
+{{ print "hello" }}
+<!-- hello -->
+
+<!-- same as -->
+{{ "hello" }}
+<!-- hello -->
+```
+
 #### `printf`
 
 Alias for `fmt.Sprintf`
 
+```django
+{{ printf "hello %s" "world" }}
+<!-- hello world -->
+```
+
 #### `println`
 
 Alias for `fmt.Sprintln`
+
+```django
+{{ println "hello" }}
+<!-- hello world 
+-->
+```
 
 ### Text Escaping Functions
 
