@@ -55,7 +55,7 @@ type TemplateManager struct {
 	delimiterRight			string
 	fileSystem				http.FileSystem
 	directory				string
-	extension				string
+	extensions				[]string
 	excludedDirectories		[]string
 	functions				map[string]any
 	missingKey				string
@@ -72,7 +72,7 @@ type Params map[string]any
 var regexps map[string]*regexp.Regexp
 
 // Creates a new `TemplateManager` struct instance
-func Init(directory string, extension string) *TemplateManager {
+func Init(directory string, extensions ...string) *TemplateManager {
 	templateManager := &TemplateManager{
 		templateType:			"text",
 		templates:				make(map[string]*Template),
@@ -83,7 +83,7 @@ func Init(directory string, extension string) *TemplateManager {
 		delimiterLeft:			"{{",
 		delimiterRight:			"}}",
 		directory:				directory,
-		extension:				extension,
+		extensions:				extensions,
 		excludedDirectories:	[]string{"layouts", "partials", "components"},
 		functions:				make(map[string]any),
 		missingKey:				"zero",
@@ -100,8 +100,8 @@ func Init(directory string, extension string) *TemplateManager {
 }
 
 // Creates a new `TemplateManager` struct instance using an embedded filesystem
-func InitEmbed(fileSystem embed.FS, directory string, extension string) *TemplateManager {
-	templateManager := Init(directory, extension)
+func InitEmbed(fileSystem embed.FS, directory string, extensions ...string) *TemplateManager {
+	templateManager := Init(directory, extensions...)
 	templateManager.fileSystem = http.FS(fileSystem)
 
 	return templateManager
@@ -116,7 +116,7 @@ func AutomaticInit() (*TemplateManager, error) {
 
 	templateDirectory := ""
 	templateExtension := ""
-	allowedExtensions := []string{".go.html", ".go.tmpl", ".html.tmpl", ".html.tpl", ".html", ".tmpl", ".tpl", ".gohtml", ".gotmpl", ".gotpl", ".thtml", ".htm"}
+	allowedExtensions := []string{".go.html", ".go.tmpl", ".go.tpl", ".tmpl.html", ".go.tpl", ".html.tmpl", ".html.tpl", ".html", ".tmpl", ".tpl", ".gohtml", ".gotmpl", ".gotpl", ".thtml", ".htm"}
 
 	err = filepath.WalkDir(scan, func(path string, info fs.DirEntry, err error) error {
 		if err != nil || info == nil {
@@ -137,7 +137,7 @@ func AutomaticInit() (*TemplateManager, error) {
 		}
 
 		if strings.HasPrefix(name, "templates/") || strings.HasPrefix(name, "views/") {
-			extension, err := checkAllowedExtension(name, allowedExtensions)
+			extension, err := hasExtension(name, allowedExtensions)
 			if err == nil {
 				templateDirectory	= strings.Split(name, "/")[0]
 				templateExtension	= extension
@@ -310,7 +310,8 @@ func (tm *TemplateManager) Parse() error {
 			return err
 		}
 
-		if len(tm.extension) >= len(path) || path[len(path) - len(tm.extension):] != tm.extension {
+		_, err = hasExtension(path, tm.extensions)
+		if err != nil {
 			return nil
 		}
 
@@ -625,7 +626,8 @@ func (tm *TemplateManager) parseComponents() error {
 			return err
 		}
 
-		if len(tm.extension) >= len(path) || path[len(path) - len(tm.extension):] != tm.extension {
+		extension, err := hasExtension(path, tm.extensions)
+		if err != nil {
 			return nil
 		}
 
@@ -633,9 +635,10 @@ func (tm *TemplateManager) parseComponents() error {
 			return nil
 		}
 
-		componentPath, _ := cleanPath(path, tm.directory)
-		index := strings.LastIndex(componentPath, "/")
-		name := stripExtension(componentPath[index + 1:])
+		componentPath, _	:= cleanPath(path, tm.directory)
+		index				:= strings.LastIndex(componentPath, "/")
+		name				:= stripExtension(componentPath[index + 1:], extension)
+
 		tm.components[name] = componentPath
 
 		return nil
@@ -1182,8 +1185,7 @@ func initRegexps() {
 }
 
 // Check that the template file has a standard file extension
-// Only used for automatic initialisation  
-func checkAllowedExtension(file string, allowedExtensions []string) (string, error) {
+func hasExtension(file string, allowedExtensions []string) (string, error) {
 	for _, extension := range allowedExtensions {
 		if strings.HasSuffix(file, extension) {
 			return extension, nil
@@ -1204,7 +1206,12 @@ func cleanPath(path string, directory string) (string, error) {
 }
 
 // Removes the extension from a file
-func stripExtension(file string) string {
-	index := strings.LastIndex(file, ".")
+func stripExtension(file string, extensions ...string) string {
+	extension := "."
+	if len(extensions) > 0 {
+		extension = extensions[0]
+	}
+
+	index := strings.LastIndex(file, extension)
 	return file[:index] 
 }

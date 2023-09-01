@@ -87,10 +87,16 @@ or
 
 ## Basic Usage
 
-`templateManager` requires initialisation. At a minimum it requires you to tell it where the templates are kept, and what file type the template files are:
+`templateManager` requires initialisation. At a minimum it requires you to tell it where the templates are kept, and what file types the template files are:
 
 ```go
-var tm = templateManager.Init("templates", ".html")
+var tm = templateManager.Init("templates", ".html", ".htm")
+
+// OR for embedded templates
+
+//go:embed templates/*
+var embeddedTemplates embed.FS
+var tm = templateManager.InitEmbed(embeddedTemplates, ".html", ".htm")
 ```
 
 During parsing, `templateManager` only needs to know about the location of the "entry" template files as it will scan each for its dependencies. It is therefore best that it does not know about layout files, partials or components and these should be kept separate and excluded from parsing:
@@ -478,7 +484,7 @@ var tm *TM.TemplateManager
 
 func main() {
 	tm = TM.Init("templates", ".html").
-		ExcludeFolders([]string{"layouts", "partials"})
+		ExcludeDirectories([]string{"layouts", "partials"})
 	err := tm.Parse()
 	if err != nil {
 		panic(err)
@@ -502,7 +508,7 @@ func test(w http.ResponseWriter, r *http.Request) {
 ```django
 {{ extends "layouts/public.html" }}
 
-{{ var "languageCode" }} en-GB {{ end }}
+{{ var "LanguageCode" }} en-GB {{ end }}
 
 {{- define "title" -}}{{ .Title }} Title {{- end -}}
 
@@ -533,10 +539,10 @@ func test(w http.ResponseWriter, r *http.Request) {
 `templates/layouts/public.html`
 ```django
 {{ var "LanguageCode" }} en-US {{ end }}
-<!DOCTYPE html lang="{{ .LanguageCode }}">
-<html>
+<!DOCTYPE html>
+<html lang="{{ .LanguageCode }}">
 <head>
-	<title>{{ block "title" "" -}} default title {{- end }}</title>
+	<title>{{ block "title" . -}} default title {{- end }}</title>
 	<meta name="description" value="{{ block "description" "" -}} default description {{- end }}">
 	{{ template "partials/meta.html" . }}
 </head>
@@ -585,7 +591,7 @@ var embeddedTemplates embed.FS
 
 func main() {
 	tm = TM.InitEmbed(embeddedTemplates, "templates", ".html").
-		ExcludeFolders([]string{"layouts", "partials"})
+		ExcludeDirectories([]string{"layouts", "partials"})
 	err := tm.Parse()
 	if err != nil {
 		panic(err)
