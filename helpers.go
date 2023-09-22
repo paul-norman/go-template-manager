@@ -120,7 +120,7 @@ func dateFormatHelper(date string) string {
 			"W3C": 		"Y-m-d\\TH:i:sP",	// "2006-01-02T15:04:05Z07:00"
 			"ATOM": 	"Y-m-d\\TH:i:sP",	// "2006-01-02T15:04:05Z07:00"
 			"COOKIE": 	"l, d-M-Y H:i:s T",	// "Monday, 02-Jan-2006 15:04:05 MST"
-			"RSS": 		"D, d M Y H:i:s O",	// "Mon, 02 01 2006 15:04:05 +00:00"
+			"RSS": 		"D, d M Y H:i:s O",	// "Mon, 02 01 2006 15:04:05 -07:00"
 			"MYSQL": 	"Y-m-d H:i:s",		// "2006-01-02 15:04:05"
 			"UNIX": 	"D M _j H:i:s T Y", // "Mon Jan _2 15:04:05 MST 2006"
 			"RUBY": 	"D M d H:i:s o Y", 	// "Mon Jan 02 15:04:05 -0700 2006"
